@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Persistence;
+
+namespace App\Persistence;
+
+use App\Domain\Round;
+use PDO;
+
+final class RoundRepository
+{
+    public function __construct(
+        private readonly PDO $pdo,
+    ) {
+    }
+
+    public function save(Round $round): void
+    {
+        $stmt = $this->pdo->prepare(<<<SQL
+                INSERT INTO rounds (number, started_on, ended_on)
+                VALUES (:number, :started, :ended)
+                ON CONFLICT (number) DO UPDATE
+                    SET started_on = excluded.started_on,
+                        ended_on   = excluded.ended_on
+            SQL);
+        $stmt->execute([
+            'number' => $round->number,
+            'started' => $round->startedOn,
+            'ended' => $round->endedOn,
+        ]);
+    }
+
+    public function addFilm(int $round, string $filmSlug, string $pickedBy): void
+    {
+        $stmt = $this->pdo->prepare(<<<SQL
+                INSERT INTO round_films (round_number, film_slug, picked_by)
+                VALUES (:round, :film, :by)
+                ON CONFLICT (round_number, film_slug) DO UPDATE SET picked_by = excluded.picked_by
+            SQL);
+        $stmt->execute(['round' => $round, 'film' => $filmSlug, 'by' => $pickedBy]);
+    }
+
+    public function ensure(int $number): void
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO rounds (number) VALUES (:n) ON CONFLICT (number) DO NOTHING',
+        );
+        $stmt->execute(['n' => $number]);
+    }
+}

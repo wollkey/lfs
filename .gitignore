@@ -1,0 +1,8 @@
+# Project
+/vendor/
+/var/
+/data/
+/backups/
+
+# IDE
+.idea

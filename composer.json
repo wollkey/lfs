@@ -1,0 +1,41 @@
+{
+    "name": "wollkey/lfs",
+    "description": "Last Frame Society — film club ratings and statistics.",
+    "type": "project",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Alex",
+            "email": "wollkey@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "8.5.*",
+        "ext-dom": "*",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*",
+        "symfony/console": "^8.1",
+        "symfony/css-selector": "^8.1",
+        "symfony/dom-crawler": "^8.1",
+        "symfony/routing": "^8.1"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "guzzlehttp/guzzle": "^7.13",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^13.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

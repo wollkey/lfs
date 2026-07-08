@@ -1,0 +1,46 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use App\Console\FetchFixturesCommand;
+use App\Console\ImportHtmlCommand;
+use App\Console\MigrateCommand;
+use App\Console\SeedBuildCommand;
+use App\Console\SeedLoadCommand;
+use App\Console\SeedMembersCommand;
+use App\Console\SetRatingCommand;
+use App\Console\ShowFilmCommand;
+use App\Letterboxd\Parser\ListParser;
+use App\Letterboxd\Parser\FriendsRatingsParser;
+use App\Persistence\Connection;
+use App\Persistence\FilmRepository;
+use App\Persistence\MemberRepository;
+use App\Persistence\Migrator;
+use App\Persistence\RatingRepository;
+use App\Persistence\RoundRepository;
+use Symfony\Component\Console\Application;
+
+$pdo = Connection::open(__DIR__ . '/../data/lfs.sqlite');
+
+$migrator = new Migrator($pdo, __DIR__ . '/../migrations');
+$members = new MemberRepository($pdo);
+$films = new FilmRepository($pdo);
+$ratings = new RatingRepository($pdo);
+$rounds = new RoundRepository($pdo);
+
+$listParser = new ListParser();
+$ratingParser = new FriendsRatingsParser();
+
+$app = new Application('LFS');
+$app->addCommand(new MigrateCommand($migrator));
+$app->addCommand(new SeedMembersCommand($members));
+$app->addCommand(new SetRatingCommand($ratings));
+$app->addCommand(new ShowFilmCommand($ratings));
+$app->addCommand(new FetchFixturesCommand());
+$app->addCommand(new SeedLoadCommand($films, $rounds, $ratings));
+$app->addCommand(new SeedBuildCommand($listParser, $ratingParser));
+$app->addCommand(new ImportHtmlCommand($listParser, $films, $ratings));
+$app->run();
