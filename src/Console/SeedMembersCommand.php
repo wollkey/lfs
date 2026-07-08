@@ -17,7 +17,7 @@ final class SeedMembersCommand extends Command
     /**
      * @var list<array{string, string, MemberStatus}>
      */
-    private const ROSTER = [
+    private const array ROSTER = [
         ['wollkey',        'Лёша',      MemberStatus::Active],
         ['lenka_penka',    'Лена',      MemberStatus::Active],
         ['al1vka',         'Алина Б.',  MemberStatus::Active],

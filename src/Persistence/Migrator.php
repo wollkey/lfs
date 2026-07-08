@@ -46,7 +46,8 @@ final readonly class Migrator
     }
 
     /**
-     * @param string[] $applied @return array<string,string> version => path
+     * @param string[] $applied
+     * @return array<string,string> version => path
      */
     private function pending(array $applied): array
     {

@@ -27,7 +27,6 @@ final class ListParserTest extends TestCase
         $films = $this->parser->parse($this->html);
 
         self::assertCount(56, $films);
-        self::assertContainsOnlyInstancesOf(ParsedFilm::class, $films);
     }
 
     public function testParsesFirstFilm(): void

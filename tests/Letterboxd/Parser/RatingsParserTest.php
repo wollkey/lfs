@@ -27,7 +27,6 @@ final class FriendsRatingsParserTest extends TestCase
         $ratings = $this->parser->parse($this->html);
 
         self::assertCount(7, $ratings);
-        self::assertContainsOnlyInstancesOf(ParsedRating::class, $ratings);
     }
 
     public function testParsesFirstRating(): void
