@@ -71,7 +71,7 @@ final class ListParser
         $poster = $li->filter(self::POSTER);
         $title = $poster->count() > 0 ? ($poster->attr('data-item-name') ?? $slug) : $slug;
 
-        return new ParsedFilm($slug, $this->cleanTitle($title));
+        return new ParsedFilm($slug, $this->cleanTitle($title), $this->posterUrl($li));
     }
 
     private function slug(Crawler $li): ?string
@@ -96,6 +96,25 @@ final class ListParser
         $owner = $body->attr('data-owner');
 
         return $owner !== null && $owner !== '' ? $owner : null;
+    }
+
+    private function posterUrl(Crawler $li): ?string
+    {
+        $img = $li->filter('img');
+        if ($img->count() === 0) {
+            return null;
+        }
+
+        $srcset = trim($img->attr('srcset') ?? '');
+        if ($srcset === '') {
+            return null;
+        }
+
+        $candidates = explode(',', $srcset);
+        $last = trim((string) end($candidates));
+        $url = trim(explode(' ', $last)[0]);
+
+        return $url !== '' ? $url : null;
     }
 
     private function cleanTitle(string $itemName): string

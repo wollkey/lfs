@@ -46,6 +46,10 @@ seed-load: ## Load seed JSON into the database (safe on prod)
 	@$(CONSOLE) seed:load
 .PHONY: seed-load
 
+fetch-posters: ## DEV: download posters from data/list.html into public/posters/
+	@$(CONSOLE) posters:fetch
+.PHONY: fetch-posters
+
 fresh: ## Recreate empty DB + seed roster (DROPS DATA)
 	@rm -f $(DB)
 	@$(MAKE) migrate

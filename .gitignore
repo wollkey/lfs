@@ -3,6 +3,7 @@
 /var/
 /data/
 /backups/
+/public/posters/*.jpg
 
 # IDE
 .idea

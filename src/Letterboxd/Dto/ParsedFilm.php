@@ -9,6 +9,7 @@ final readonly class ParsedFilm
     public function __construct(
         public string $slug,
         public string $title,
+        public ?string $posterUrl = null,
     ) {
     }
 }
