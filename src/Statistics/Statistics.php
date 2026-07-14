@@ -6,11 +6,12 @@ namespace App\Statistics;
 
 use App\Domain\MemberStatus;
 
-final readonly class Statistics
+final class Statistics
 {
     public function __construct(
-        private \PDO $pdo,
-        private int $quorum = 5,
+        private readonly \PDO $pdo,
+        private readonly int $quorum = 5,
+        private readonly int $minCuratorPicks = 2,
     ) {
     }
 
@@ -31,45 +32,81 @@ final readonly class Statistics
             $t['current_round'] !== null ? (int) $t['current_round'] : null,
         );
 
-        return new Overview($totals, $this->bestFilm(), $this->worstFilm(), $this->mostDivisive());
+        $rated = $this->ratedFilms();
+        $members = $this->membersWithStats();
+
+        return new Overview(
+            $totals,
+            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $b->average <=> $a->average),
+            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $a->average <=> $b->average),
+            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $b->stdDev <=> $a->stdDev),
+            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $a->stdDev <=> $b->stdDev),
+            $this->mostActiveMember($members),
+            $this->bestCurator($members),
+        );
     }
 
     public function bestFilm(): ?RatedFilm
     {
-        return $this->topByAverage('DESC');
+        return $this->pickFilm(
+            $this->ratedFilms(),
+            static fn (RatedFilm $a, RatedFilm $b) => $b->average <=> $a->average,
+        );
     }
 
     public function worstFilm(): ?RatedFilm
     {
-        return $this->topByAverage('ASC');
+        return $this->pickFilm(
+            $this->ratedFilms(),
+            static fn (RatedFilm $a, RatedFilm $b) => $a->average <=> $b->average,
+        );
     }
 
     public function mostDivisive(): ?RatedFilm
     {
-        $stmt = $this->pdo->prepare(<<<SQL
-                SELECT f.slug, f.title,
-                       AVG(r.score) AS average,
-                       COUNT(r.score) AS votes,
-                       MAX(r.score) - MIN(r.score) AS spread
-                FROM films f
-                JOIN ratings r ON r.film_slug = f.slug
-                GROUP BY f.slug
-                HAVING votes >= CAST(:quorum AS INTEGER)
-                ORDER BY spread DESC, average DESC
-                LIMIT 1
-            SQL);
-        $stmt->execute(['quorum' => $this->quorum]);
-        $row = $stmt->fetch();
+        return $this->pickFilm(
+            $this->ratedFilms(),
+            static fn (RatedFilm $a, RatedFilm $b) => $b->stdDev <=> $a->stdDev,
+        );
+    }
 
-        return $row
-            ? new RatedFilm(
-                $row['slug'],
-                $row['title'],
-                round((float) $row['average'], 1),
-                (int) $row['votes'],
-                (int) $row['spread'],
-            )
-            : null;
+    public function mostAgreed(): ?RatedFilm
+    {
+        return $this->pickFilm(
+            $this->ratedFilms(),
+            static fn (RatedFilm $a, RatedFilm $b) => $a->stdDev <=> $b->stdDev,
+        );
+    }
+
+    /**
+     * @return MemberStats[]
+     */
+    public function membersWithStats(): array
+    {
+        $rows = $this->pdo->query(<<<SQL
+                SELECT m.username, m.display_name, m.status,
+                       COUNT(r.score) AS watched,
+                       AVG(r.score)   AS average_given
+                FROM members m
+                LEFT JOIN ratings r ON r.member_username = m.username
+                GROUP BY m.username
+                ORDER BY (m.status = 'active') DESC, m.display_name
+            SQL)->fetchAll();
+
+        $curators = $this->curatorStats();
+
+        return array_map(
+            static fn (array $r) => new MemberStats(
+                $r['username'],
+                $r['display_name'],
+                (int) $r['watched'],
+                $r['average_given'] !== null ? round((float) $r['average_given'], 1) : null,
+                MemberStatus::from($r['status']),
+                $curators[$r['username']]['picks'] ?? 0,
+                $curators[$r['username']]['average'] ?? null,
+            ),
+            $rows,
+        );
     }
 
     /**
@@ -104,33 +141,6 @@ final readonly class Statistics
     }
 
     /**
-     * @return MemberStats[]
-     */
-    public function membersWithStats(): array
-    {
-        $rows = $this->pdo->query(<<<SQL
-                SELECT m.username, m.display_name, m.status,
-                       COUNT(r.score) AS watched,
-                       AVG(r.score)   AS average_given
-                FROM members m
-                LEFT JOIN ratings r ON r.member_username = m.username
-                GROUP BY m.username
-                ORDER BY (m.status = 'active') DESC, m.display_name
-            SQL)->fetchAll();
-
-        return array_map(
-            static fn (array $r) => new MemberStats(
-                $r['username'],
-                $r['display_name'],
-                (int) $r['watched'],
-                $r['average_given'] !== null ? round((float) $r['average_given'], 1) : null,
-                MemberStatus::from($r['status']),
-            ),
-            $rows,
-        );
-    }
-
-    /**
      * @return RoundView[]
      */
     public function rounds(): array
@@ -139,55 +149,85 @@ final readonly class Statistics
             'SELECT number, started_on, ended_on FROM rounds ORDER BY number',
         )->fetchAll();
 
-        $filmRows = $this->pdo->query(<<<SQL
-                SELECT rf.round_number, f.slug, f.title, rf.picked_by,
-                       AVG(r.score) AS average, COUNT(r.score) AS votes,
-                       MAX(r.score) - MIN(r.score) AS spread
+        $averageRows = $this->pdo->query(<<<SQL
+                SELECT rf.round_number, AVG(r.score) AS average
                 FROM round_films rf
-                JOIN films f          ON f.slug      = rf.film_slug
-                LEFT JOIN ratings r   ON r.film_slug = f.slug
-                GROUP BY rf.round_number, f.slug
-                ORDER BY rf.round_number, average DESC, votes DESC
+                JOIN ratings r ON r.film_slug = rf.film_slug
+                GROUP BY rf.round_number
             SQL)->fetchAll();
 
+        $roundAverage = [];
+        foreach ($averageRows as $row) {
+            $roundAverage[(int) $row['round_number']] = round((float) $row['average'], 1);
+        }
+
+        $scoreRows = $this->pdo->query(<<<SQL
+                SELECT rf.round_number, f.slug, f.title, rf.picked_by, r.score
+                FROM round_films rf
+                JOIN films f        ON f.slug      = rf.film_slug
+                LEFT JOIN ratings r ON r.film_slug = f.slug
+            SQL)->fetchAll();
+
+        /** @var array<int, array<string, array{title: string, pickedBy: string, scores: list<int>}>> $byRound */
         $byRound = [];
-        foreach ($filmRows as $row) {
-            $byRound[(int) $row['round_number']][] = $row;
+        foreach ($scoreRows as $row) {
+            $n = (int) $row['round_number'];
+            $slug = $row['slug'];
+
+            $byRound[$n][$slug]['title'] = $row['title'];
+            $byRound[$n][$slug]['pickedBy'] = $row['picked_by'];
+            $byRound[$n][$slug]['scores'] ??= [];
+
+            if ($row['score'] !== null) {
+                $byRound[$n][$slug]['scores'][] = (int) $row['score'];
+            }
         }
 
         $rounds = [];
         foreach ($roundRows as $r) {
             $number = (int) $r['number'];
-            $rowsForRound = $byRound[$number] ?? [];
+            $filmsInRound = $byRound[$number] ?? [];
 
-            $films = array_map(
-                static fn (array $f) => new ListedFilm(
-                    $f['slug'],
-                    $f['title'],
-                    $f['average'] !== null ? round((float) $f['average'], 1) : null,
-                    (int) $f['votes'],
+            $films = [];
+            $qualified = [];
+
+            foreach ($filmsInRound as $slug => $film) {
+                $scores = $film['scores'];
+                $average = $scores === [] ? null : round(array_sum($scores) / count($scores), 1);
+
+                $films[] = new ListedFilm(
+                    $slug,
+                    $film['title'],
+                    $average,
+                    count($scores),
                     $number,
-                    $f['picked_by'],
+                    $film['pickedBy'],
                     null,
-                ),
-                $rowsForRound,
-            );
+                );
 
-            $winner = null;
-            foreach ($rowsForRound as $f) {
-                if ((int) $f['votes'] > 0) {
-                    $winner = new RatedFilm(
-                        $f['slug'],
-                        $f['title'],
-                        round((float) $f['average'], 1),
-                        (int) $f['votes'],
-                        (int) $f['spread'],
+                if (count($scores) >= $this->quorum) {
+                    $qualified[] = new RatedFilm(
+                        $slug,
+                        $film['title'],
+                        (float) $average,
+                        count($scores),
+                        max($scores) - min($scores),
+                        $this->populationStdDev($scores),
                     );
-                    break;
                 }
             }
 
-            $rounds[] = new RoundView($number, $r['started_on'], $r['ended_on'], $winner, $films);
+            usort($films, static fn (ListedFilm $a, ListedFilm $b) => ($b->average ?? -1) <=> ($a->average ?? -1));
+
+            $rounds[] = new RoundView(
+                $number,
+                $r['started_on'],
+                $r['ended_on'],
+                $roundAverage[$number] ?? null,
+                $this->pickFilm($qualified, static fn (RatedFilm $a, RatedFilm $b) => $b->average <=> $a->average),
+                $this->pickFilm($qualified, static fn (RatedFilm $a, RatedFilm $b) => $a->average <=> $b->average),
+                $films,
+            );
         }
 
         return $rounds;
@@ -246,32 +286,145 @@ final readonly class Statistics
         );
     }
 
-    private function topByAverage(string $dir): ?RatedFilm
+    /**
+     * Все фильмы, набравшие кворум, со всеми метриками.
+     * stdDev считаем в PHP — в SQLite нет STDDEV.
+     *
+     * @return RatedFilm[]
+     */
+    private function ratedFilms(): array
     {
-        $stmt = $this->pdo->prepare(<<<SQL
-                SELECT f.slug, f.title,
-                       AVG(r.score) AS average,
-                       COUNT(r.score) AS votes,
-                       MAX(r.score) - MIN(r.score) AS spread
+        $rows = $this->pdo->query(<<<SQL
+                SELECT f.slug, f.title, r.score
                 FROM films f
                 JOIN ratings r ON r.film_slug = f.slug
-                GROUP BY f.slug
-                HAVING votes >= CAST(:quorum AS INTEGER)
-                ORDER BY average {$dir}, votes DESC
-                LIMIT 1
-            SQL);
-        $stmt->execute(['quorum' => $this->quorum]);
-        $row = $stmt->fetch();
+            SQL)->fetchAll();
 
-        return $row
-            ? new RatedFilm(
-                $row['slug'],
-                $row['title'],
-                round((float) $row['average'], 1),
-                (int) $row['votes'],
-                (int) $row['spread'],
-            )
-            : null;
+        /** @var array<string, array{title: string, scores: list<int>}> $byFilm */
+        $byFilm = [];
+        foreach ($rows as $row) {
+            $byFilm[$row['slug']]['title'] = $row['title'];
+            $byFilm[$row['slug']]['scores'][] = (int) $row['score'];
+        }
+
+        $films = [];
+        foreach ($byFilm as $slug => $film) {
+            $scores = $film['scores'];
+
+            if (count($scores) < $this->quorum) {
+                continue;
+            }
+
+            $films[] = new RatedFilm(
+                $slug,
+                $film['title'],
+                round(array_sum($scores) / count($scores), 1),
+                count($scores),
+                max($scores) - min($scores),
+                $this->populationStdDev($scores),
+            );
+        }
+
+        return $films;
+    }
+
+    /**
+     * @param RatedFilm[]                         $films
+     * @param callable(RatedFilm, RatedFilm): int $comparator
+     */
+    private function pickFilm(array $films, callable $comparator): ?RatedFilm
+    {
+        if ($films === []) {
+            return null;
+        }
+
+        usort($films, $comparator);
+
+        return $films[0];
+    }
+
+    /**
+     * @param list<int> $scores
+     */
+    private function populationStdDev(array $scores): float
+    {
+        $n = count($scores);
+        $mean = array_sum($scores) / $n;
+
+        $variance = 0.0;
+        foreach ($scores as $score) {
+            $variance += ($score - $mean) ** 2;
+        }
+        $variance /= $n;
+
+        return round(sqrt($variance), 2);
+    }
+
+    /**
+     * @param MemberStats[] $members
+     */
+    private function mostActiveMember(array $members): ?MemberStats
+    {
+        $watched = array_filter($members, static fn (MemberStats $m) => $m->watched > 0);
+
+        if ($watched === []) {
+            return null;
+        }
+
+        usort($watched, static fn (MemberStats $a, MemberStats $b) => $b->watched <=> $a->watched);
+
+        return $watched[0];
+    }
+
+    /**
+     * @param MemberStats[] $members
+     */
+    private function bestCurator(array $members): ?MemberStats
+    {
+        $qualified = array_values(array_filter(
+            $members,
+            fn (MemberStats $m) => $m->picks >= $this->minCuratorPicks && $m->pickedAverage !== null,
+        ));
+
+        if ($qualified === []) {
+            return null;
+        }
+
+        usort($qualified, static fn (MemberStats $a, MemberStats $b) => $b->pickedAverage <=> $a->pickedAverage);
+
+        return $qualified[0];
+    }
+
+    /**
+     * Кураторская статистика: среднее ИЗ СРЕДНИХ по кворумным пикам.
+     * Каждый пик весит одинаково — «насколько в среднем заходит одна ставка».
+     *
+     * @return array<string, array{picks: int, average: float}>
+     */
+    private function curatorStats(): array
+    {
+        $rows = $this->pdo->query(<<<SQL
+                SELECT rf.picked_by, AVG(r.score) AS film_average
+                FROM round_films rf
+                JOIN ratings r ON r.film_slug = rf.film_slug
+                GROUP BY rf.round_number, rf.film_slug
+                HAVING COUNT(r.score) >= {$this->quorum}
+            SQL)->fetchAll();
+
+        $byCurator = [];
+        foreach ($rows as $row) {
+            $byCurator[$row['picked_by']][] = (float) $row['film_average'];
+        }
+
+        $stats = [];
+        foreach ($byCurator as $username => $averages) {
+            $stats[$username] = [
+                'picks' => count($averages),
+                'average' => round(array_sum($averages) / count($averages), 1),
+            ];
+        }
+
+        return $stats;
     }
 
     /**

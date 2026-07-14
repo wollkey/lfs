@@ -48,7 +48,7 @@ final class SeedLoadCommand extends Command
                 $this->rounds->save(new Round($r['number'], $r['startedOn'] ?? null, $r['endedOn'] ?? null));
             }
             foreach ($rounds['roundFilms'] ?? [] as $rf) {
-                $this->rounds->ensure($rf['round']);   // на случай круга без dates-секции
+                $this->rounds->ensure($rf['round']);
                 $this->rounds->addFilm($rf['round'], $rf['slug'], $rf['pickedBy']);
             }
         }

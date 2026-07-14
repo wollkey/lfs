@@ -11,6 +11,9 @@ final readonly class Overview
         public ?RatedFilm $bestFilm,
         public ?RatedFilm $worstFilm,
         public ?RatedFilm $mostDivisive,
+        public ?RatedFilm $mostAgreed,
+        public ?MemberStats $mostActiveMember,
+        public ?MemberStats $bestCurator,
     ) {
     }
 }

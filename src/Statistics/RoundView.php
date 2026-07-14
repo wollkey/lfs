@@ -13,7 +13,9 @@ final readonly class RoundView
         public int $number,
         public ?string $startedOn,
         public ?string $endedOn,
+        public ?float $average,
         public ?RatedFilm $winner,
+        public ?RatedFilm $worst,
         public array $films,
     ) {
     }

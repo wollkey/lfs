@@ -12,6 +12,7 @@ final readonly class RatedFilm
         public float $average,
         public int $votes,
         public int $spread,
+        public float $stdDev,
     ) {
     }
 }

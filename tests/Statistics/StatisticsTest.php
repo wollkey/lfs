@@ -131,7 +131,7 @@ final class StatisticsTest extends IntegrationTestCase
         $this->rounds->addFilm(1, 'stalker', 'wollkey');
         $this->rounds->addFilm(1, 'mother', 'lenka');
 
-        $rounds = $this->statistics()->rounds();
+        $rounds = $this->statistics(quorum: 2)->rounds();
 
         self::assertSame('stalker', $rounds[0]->winner?->slug);
     }

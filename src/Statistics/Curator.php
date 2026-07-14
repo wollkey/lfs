@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace App\Statistics;
 
-use App\Domain\MemberStatus;
-
-final readonly class MemberStats
+final readonly class Curator
 {
     public function __construct(
         public string $username,
         public string $displayName,
-        public int $watched,
-        public ?float $averageGiven,
-        public MemberStatus $status,
         public int $picks,
-        public ?float $pickedAverage,
+        public float $average,
     ) {
     }
 }
