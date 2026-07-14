@@ -1,8 +1,8 @@
-import { render as overview }   from '/pages/overview.js';
-import { render as films }      from '/pages/films.js';
-import { render as filmDetail } from '/pages/film.js';
-import { render as rounds }     from '/pages/rounds.js';
-import { render as members }    from '/pages/members.js';
+import { render as overview }   from './pages/overview.js';
+import { render as films }      from './pages/films.js';
+import { render as filmDetail } from './pages/film.js';
+import { render as rounds }     from './pages/rounds.js';
+import { render as members }    from './pages/members.js';
 
 const routes = [
     { path: '/',             render: overview },
@@ -30,19 +30,49 @@ function matchRoute(pathname) {
 }
 
 const view = document.querySelector('#view');
-const path = location.pathname;
-const matched = matchRoute(path);
 
-document.querySelectorAll('.nav__link').forEach((link) => {
-    const linkPath = new URL(link.href).pathname;
-    const active = linkPath === '/' ? path === '/' : path.startsWith(linkPath);
-    if (active) link.classList.add('nav__link--active');
-});
+function highlightNav(path) {
+    document.querySelectorAll('.nav__link').forEach((link) => {
+        const linkPath = new URL(link.href).pathname;
+        const active = linkPath === '/' ? path === '/' : path.startsWith(linkPath);
+        link.classList.toggle('nav__link--active', active);
+    });
+}
 
-if (matched === null) {
-    view.innerHTML = `<p class="error">Page not found: ${path}</p>`;
-} else {
+function renderCurrent() {
+    const path = location.pathname;
+    const matched = matchRoute(path);
+    highlightNav(path);
+
+    if (matched === null) {
+        view.innerHTML = `<p class="error">Page not found: ${path}</p>`;
+        return;
+    }
+
     Promise.resolve(matched.render(view, matched.params)).catch((err) => {
         view.innerHTML = `<p class="error">Не загрузилось: ${err.message}</p>`;
     });
 }
+
+function navigate(path) {
+    if (path === location.pathname) return;
+    history.pushState(null, '', path);
+    renderCurrent();
+}
+
+document.addEventListener('click', (event) => {
+    const link = event.target.closest('a');
+    if (link === null) return;
+
+    const url = new URL(link.href);
+    if (url.origin !== location.origin) return;
+    if (link.target === '_blank') return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    navigate(url.pathname);
+});
+
+window.addEventListener('popstate', renderCurrent);
+
+renderCurrent();

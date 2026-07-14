@@ -24,7 +24,6 @@ export async function render(root, params) {
 
     const film = await response.json();
 
-    // подпись: раунд и кто выбрал — часть появляется только если данные есть
     const parts = [];
     if (film.round !== null)    parts.push(`Round ${film.round}`);
     if (film.pickedBy !== null) parts.push(`picked by ${letterboxdLink(film.pickedBy)}`);
@@ -32,13 +31,11 @@ export async function render(root, params) {
 
     const avg = film.average === null ? '—' : film.average;
 
-    // копия массива → сортировка по убыванию оценки (щедрые сверху)
     const ratings = [...film.ratings].sort((a, b) => b.score - a.score);
     const ratingsHtml = ratings.length === 0
         ? `<p class="placeholder">No ratings yet.</p>`
         : `<ul class="rating-list">${ratings.map(ratingRow).join('')}</ul>`;
 
-    // блок «не смотрели» — только если такие есть; имя ведёт на Letterboxd
     const notWatchedHtml = film.notWatched.length === 0 ? '' : `
     <section class="not-watched">
       <h2 class="section-title">Not watched</h2>

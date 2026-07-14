@@ -44,8 +44,8 @@ function drawAverageChart(canvas, members) {
         options: {
             maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true, max: 10, ticks: { color: '#8a8a92' }, grid: { color: '#26262c' } },
-                x: { ticks: { color: '#e8e8ea' }, grid: { display: false } },
+                y: { beginAtZero: true, max: 10, ticks: { color: '#8a8a92', stepSize: 5 }, grid: { color: '#26262c' } },
+                x: { ticks: { color: '#8a8a92', font: { size: 10 } }, grid: { display: false } },
             },
             plugins: { legend: { display: false } },
         },
@@ -64,9 +64,9 @@ export async function render(root) {
 
     root.innerHTML = `
     ${hasRatings ? `
-      <section class="chart-block">
-        <h2 class="section-title">Average rating given</h2>
-        <div class="chart-wrap"><canvas id="avgChart"></canvas></div>
+      <section class="chart-mini">
+        <span class="chart-mini__label">Harsh vs generous</span>
+        <div class="chart-mini__wrap"><canvas id="avgChart"></canvas></div>
       </section>` : ''}
     ${group('Current members', active)}
     ${group('Former members', former)}`;
