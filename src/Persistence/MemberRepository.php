@@ -16,26 +16,29 @@ final class MemberRepository
     public function save(Member $member): void
     {
         $stmt = $this->pdo->prepare(<<<SQL
-                INSERT INTO members (username, display_name, status)
-                VALUES (:username, :name, :status)
+                INSERT INTO members (username, display_name, status, position)
+                VALUES (:username, :name, :status, :position)
                 ON CONFLICT (username) DO UPDATE
                     SET display_name = excluded.display_name,
-                        status       = excluded.status
+                        status       = excluded.status,
+                        position     = excluded.position
             SQL);
+
         $stmt->execute([
             'username' => $member->username,
             'name' => $member->displayName,
             'status' => $member->status->value,
+            'position' => $member->position,
         ]);
     }
 
     public function find(string $username): ?Member
     {
-        $stmt = $this->pdo->prepare('SELECT username, display_name FROM members WHERE username = :u');
+        $stmt = $this->pdo->prepare('SELECT username, display_name, position FROM members WHERE username = :u');
         $stmt->execute(['u' => $username]);
         $row = $stmt->fetch();
 
-        return $row ? new Member($row['username'], $row['display_name']) : null;
+        return $row ? new Member($row['username'], $row['display_name'], position: $row['position']) : null;
     }
 
     /**
@@ -44,8 +47,8 @@ final class MemberRepository
     public function all(): array
     {
         return array_map(
-            static fn (array $r) => new Member($r['username'], $r['display_name']),
-            $this->pdo->query('SELECT username, display_name FROM members ORDER BY display_name')->fetchAll(),
+            static fn (array $r) => new Member($r['username'], $r['display_name'], $r['status'], $r['position']),
+            $this->pdo->query('SELECT username, display_name, status, position FROM members ORDER BY display_name')->fetchAll(),
         );
     }
 }

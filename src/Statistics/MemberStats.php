@@ -16,6 +16,7 @@ final readonly class MemberStats
         public MemberStatus $status,
         public int $picks,
         public ?float $pickedAverage,
+        public ?int $position,
     ) {
     }
 }

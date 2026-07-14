@@ -32,14 +32,22 @@ final class RoundRepository
         ]);
     }
 
-    public function addFilm(int $round, string $filmSlug, string $pickedBy): void
+    public function addFilm(int $round, string $filmSlug, ?string $pickedBy, int $position): void
     {
         $stmt = $this->pdo->prepare(<<<SQL
-                INSERT INTO round_films (round_number, film_slug, picked_by)
-                VALUES (:round, :film, :by)
-                ON CONFLICT (round_number, film_slug) DO UPDATE SET picked_by = excluded.picked_by
+                INSERT INTO round_films (round_number, film_slug, picked_by, position)
+                VALUES (:round, :film, :by, :pos)
+                ON CONFLICT (round_number, film_slug) DO UPDATE
+                    SET picked_by = excluded.picked_by,
+                        position  = excluded.position
             SQL);
-        $stmt->execute(['round' => $round, 'film' => $filmSlug, 'by' => $pickedBy]);
+
+        $stmt->execute([
+            'round' => $round,
+            'film' => $filmSlug,
+            'by' => $pickedBy,
+            'pos' => $position,
+        ]);
     }
 
     public function ensure(int $number): void

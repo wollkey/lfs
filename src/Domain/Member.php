@@ -10,6 +10,7 @@ final readonly class Member
         public string $username,
         public string $displayName,
         public MemberStatus $status = MemberStatus::Active,
+        public ?int $position = null,
     ) {
     }
 }

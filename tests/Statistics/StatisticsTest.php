@@ -78,7 +78,7 @@ final class StatisticsTest extends IntegrationTestCase
         $this->givenMembers('wollkey', 'lenka', 'vika');
         $this->givenRound(1);
         $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
-        $this->rounds->addFilm(1, 'stalker', 'wollkey');
+        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1);
 
         $films = $this->indexBySlug($this->statistics()->films(withRatings: true));
 
@@ -128,8 +128,8 @@ final class StatisticsTest extends IntegrationTestCase
         $this->givenRound(1, '2024-01-05', '2024-03-10');
         $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
         $this->givenFilmRatedBy('mother', ['wollkey' => 2, 'lenka' => 9, 'vika' => 5]);
-        $this->rounds->addFilm(1, 'stalker', 'wollkey');
-        $this->rounds->addFilm(1, 'mother', 'lenka');
+        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1);
+        $this->rounds->addFilm(1, 'mother', 'lenka', 2);
 
         $rounds = $this->statistics(quorum: 2)->rounds();
 
@@ -140,8 +140,8 @@ final class StatisticsTest extends IntegrationTestCase
     {
         $this->givenMembers('wollkey');
         $this->givenRound(2);
-        $this->givenFilmRatedBy('unseen', []);   // фильм в круге, но никто не оценил
-        $this->rounds->addFilm(2, 'unseen', 'wollkey');
+        $this->givenFilmRatedBy('unseen', []);
+        $this->rounds->addFilm(2, 'unseen', 'wollkey', 1);
 
         $rounds = $this->statistics()->rounds();
 

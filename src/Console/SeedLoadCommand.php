@@ -49,7 +49,12 @@ final class SeedLoadCommand extends Command
             }
             foreach ($rounds['roundFilms'] ?? [] as $rf) {
                 $this->rounds->ensure($rf['round']);
-                $this->rounds->addFilm($rf['round'], $rf['slug'], $rf['pickedBy']);
+                $this->rounds->addFilm(
+                    $rf['round'],
+                    $rf['slug'],
+                    $rf['pickedBy'] ?? null,
+                    $rf['position'],
+                );
             }
         }
 

@@ -78,19 +78,16 @@ final class Statistics
         );
     }
 
-    /**
-     * @return MemberStats[]
-     */
     public function membersWithStats(): array
     {
         $rows = $this->pdo->query(<<<SQL
-                SELECT m.username, m.display_name, m.status,
-                       COUNT(r.score) AS watched,
-                       AVG(r.score)   AS average_given
+                SELECT m.username, m.display_name, m.status, m.position,
+                   COUNT(r.score) AS watched,
+                   AVG(r.score)   AS average_given
                 FROM members m
                 LEFT JOIN ratings r ON r.member_username = m.username
                 GROUP BY m.username
-                ORDER BY (m.status = 'active') DESC, m.display_name
+                ORDER BY m.position NULLS LAST, m.display_name
             SQL)->fetchAll();
 
         $curators = $this->curatorStats();
@@ -104,24 +101,22 @@ final class Statistics
                 MemberStatus::from($r['status']),
                 $curators[$r['username']]['picks'] ?? 0,
                 $curators[$r['username']]['average'] ?? null,
+                $r['position'] !== null ? (int) $r['position'] : null,
             ),
             $rows,
         );
     }
 
-    /**
-     * @return ListedFilm[]
-     */
     public function films(bool $withRatings = false): array
     {
         $filmRows = $this->pdo->query(<<<SQL
-                SELECT f.slug, f.title, rf.round_number, rf.picked_by,
+                SELECT f.slug, f.title, rf.round_number, rf.picked_by, rf.position,
                        AVG(r.score) AS average, COUNT(r.score) AS votes
                 FROM films f
                 LEFT JOIN round_films rf ON rf.film_slug = f.slug
                 LEFT JOIN ratings r      ON r.film_slug  = f.slug
                 GROUP BY f.slug
-                ORDER BY f.title
+                ORDER BY rf.round_number, rf.position
             SQL)->fetchAll();
 
         $ratingsBySlug = $withRatings ? $this->allRatingsGrouped() : [];
@@ -134,15 +129,13 @@ final class Statistics
                 (int) $f['votes'],
                 $f['round_number'] !== null ? (int) $f['round_number'] : null,
                 $f['picked_by'],
+                $f['position'] !== null ? (int) $f['position'] : null,
                 $withRatings ? ($ratingsBySlug[$f['slug']] ?? []) : null,
             ),
             $filmRows,
         );
     }
 
-    /**
-     * @return RoundView[]
-     */
     public function rounds(): array
     {
         $roundRows = $this->pdo->query(
@@ -162,13 +155,16 @@ final class Statistics
         }
 
         $scoreRows = $this->pdo->query(<<<SQL
-                SELECT rf.round_number, f.slug, f.title, rf.picked_by, r.score
+                SELECT rf.round_number, rf.position, f.slug, f.title, rf.picked_by, r.score
                 FROM round_films rf
                 JOIN films f        ON f.slug      = rf.film_slug
                 LEFT JOIN ratings r ON r.film_slug = f.slug
+                ORDER BY rf.round_number, rf.position
             SQL)->fetchAll();
 
-        /** @var array<int, array<string, array{title: string, pickedBy: string, scores: list<int>}>> $byRound */
+        /**
+         * @var array<int, array<string, array{title: string, pickedBy: ?string, position: int, scores: list<int>}>> $byRound
+         */
         $byRound = [];
         foreach ($scoreRows as $row) {
             $n = (int) $row['round_number'];
@@ -176,6 +172,7 @@ final class Statistics
 
             $byRound[$n][$slug]['title'] = $row['title'];
             $byRound[$n][$slug]['pickedBy'] = $row['picked_by'];
+            $byRound[$n][$slug]['position'] = (int) $row['position'];
             $byRound[$n][$slug]['scores'] ??= [];
 
             if ($row['score'] !== null) {
@@ -202,6 +199,7 @@ final class Statistics
                     count($scores),
                     $number,
                     $film['pickedBy'],
+                    $film['position'],
                     null,
                 );
 
@@ -216,8 +214,6 @@ final class Statistics
                     );
                 }
             }
-
-            usort($films, static fn (ListedFilm $a, ListedFilm $b) => ($b->average ?? -1) <=> ($a->average ?? -1));
 
             $rounds[] = new RoundView(
                 $number,
@@ -407,6 +403,7 @@ final class Statistics
                 SELECT rf.picked_by, AVG(r.score) AS film_average
                 FROM round_films rf
                 JOIN ratings r ON r.film_slug = rf.film_slug
+                WHERE rf.picked_by IS NOT NULL
                 GROUP BY rf.round_number, rf.film_slug
                 HAVING COUNT(r.score) >= {$this->quorum}
             SQL)->fetchAll();
