@@ -78,6 +78,9 @@ final class Statistics
         );
     }
 
+    /**
+     * @return MemberStats[]
+     */
     public function membersWithStats(): array
     {
         $rows = $this->pdo->query(<<<SQL
@@ -107,6 +110,9 @@ final class Statistics
         );
     }
 
+    /**
+     * @return ListedFilm[]
+     */
     public function films(bool $withRatings = false): array
     {
         $filmRows = $this->pdo->query(<<<SQL
@@ -136,6 +142,9 @@ final class Statistics
         );
     }
 
+    /**
+     * @return RoundView[]
+     */
     public function rounds(): array
     {
         $roundRows = $this->pdo->query(
