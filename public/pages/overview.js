@@ -1,4 +1,4 @@
-import { posterImg, letterboxdLink } from '../helpers.js';
+import {posterImg, letterboxdLink, pluralWith, plural} from '../helpers.js';
 
 function num(value) {
     return value === null ? '—' : value;
@@ -9,13 +9,13 @@ function filmCard(label, film, statLabel = null) {
         return `
       <article class="card">
         <p class="card__label">${label}</p>
-        <p class="card__empty">Not enough ratings yet</p>
+        <p class="card__empty">Пока мало оценок</p>
       </article>`;
     }
 
     const meta = statLabel === null
-        ? `${film.votes} votes · spread ${film.spread}`
-        : `${film.votes} votes · ${statLabel} ${film.stdDev}`;
+        ? `${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · разброс ${film.spread}`
+        : `$${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · ${statLabel} ${film.stdDev}`;
 
     return `
     <article class="card">
@@ -38,7 +38,7 @@ function memberCard(label, member, valueText, metaText) {
         return `
       <article class="card">
         <p class="card__label">${label}</p>
-        <p class="card__empty">Not enough data yet</p>
+        <p class="card__empty">Пока мало данных</p>
       </article>`;
     }
     return `
@@ -54,7 +54,7 @@ function memberCard(label, member, valueText, metaText) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Loading…';
+    root.innerHTML = 'Загрузка';
     const response = await fetch('/api/overview');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();
@@ -65,37 +65,37 @@ export async function render(root) {
 
     root.innerHTML = `
     <section class="totals">
-      <div class="stat"><span class="stat__num">${t.films}</span><span class="stat__label">films</span></div>
-      <div class="stat"><span class="stat__num">${t.ratings}</span><span class="stat__label">ratings</span></div>
-      <div class="stat"><span class="stat__num">${t.members}</span><span class="stat__label">members</span></div>
-      <div class="stat"><span class="stat__num">${num(t.currentRound)}</span><span class="stat__label">round</span></div>
+      <div class="stat"><span class="stat__num">${t.films}</span><span class="stat__label">${plural(t.films, ['фильм','фильма','фильмов'])}</span></div>
+      <div class="stat"><span class="stat__num">${t.ratings}</span><span class="stat__label">${plural(t.ratings, ['оценка', 'оценки', 'оценок'])}</span></div>
+      <div class="stat"><span class="stat__num">${t.members}</span><span class="stat__label">${plural(t.members, ['участник','участника','участников'])}</span></div>
+      <div class="stat"><span class="stat__num">${num(t.currentRound)}</span><span class="stat__label">${plural(num(t.currentRound), ['круг','круга','кругов'])}</span></div>
     </section>
 
-    <h2 class="section-title">Films</h2>
+    <h2 class="section-title">Фильмы</h2>
     <section class="cards">
-      ${filmCard('Best film', data.bestFilm)}
-      ${filmCard('Worst film', data.worstFilm)}
+      ${filmCard('Лучший фильм', data.bestFilm)}
+      ${filmCard('Худший фильм', data.worstFilm)}
     </section>
 
-    <h2 class="section-title">Agreement</h2>
+    <h2 class="section-title">Консенсус</h2>
     <section class="cards">
-      ${filmCard('Most divisive', data.mostDivisive, 'σ')}
-      ${filmCard('Most agreed', data.mostAgreed, 'σ')}
+      ${filmCard('Самый спорный', data.mostDivisive, 'расхождение')}
+      ${filmCard('Полное согласие', data.mostAgreed, 'расхождение')}
     </section>
 
-    <h2 class="section-title">People</h2>
+    <h2 class="section-title">Участники</h2>
     <section class="cards">
       ${memberCard(
-        'Most active',
+        'Самый активный',
         active,
         active === null ? '' : active.watched,
-        'films watched',
+        'посмотрено фильмов',
     )}
       ${memberCard(
-        'Best curator',
+        'Лучший вкус',
         curator,
         curator === null ? '' : curator.pickedAverage,
-        curator === null ? '' : `avg over ${curator.picks} qualifying picks`,
+        curator === null ? '' : `средняя по ${curator.picks} зачётным выборам`,
     )}
     </section>`;
 }

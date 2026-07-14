@@ -45,12 +45,12 @@ function renderCurrent() {
     highlightNav(path);
 
     if (matched === null) {
-        view.innerHTML = `<p class="error">Page not found: ${path}</p>`;
+        view.innerHTML = `<p class="error">Страница не найдена: ${path}</p>`;
         return;
     }
 
     Promise.resolve(matched.render(view, matched.params)).catch((err) => {
-        view.innerHTML = `<p class="error">Не загрузилось: ${err.message}</p>`;
+        view.innerHTML = `<p class="error">Ошибка загрузки: ${err.message}</p>`;
     });
 }
 

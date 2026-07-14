@@ -9,7 +9,7 @@ function memberRow(member) {
         ${letterboxdLink(member.username)}
       </div>
       <div class="member__stats">
-        <span class="member__watched">${member.watched} watched</span>
+        <span class="member__watched">просмотров: ${member.watched}</span>
         <span class="member__avg">${avg}</span>
       </div>
     </li>`;
@@ -35,7 +35,7 @@ function drawAverageChart(canvas, members) {
         data: {
             labels: rated.map((m) => m.displayName),
             datasets: [{
-                label: 'Average rating given',
+                label: 'Средняя выставленная оценка',
                 data: rated.map((m) => m.averageGiven),
                 backgroundColor: '#e0a04d',
                 borderRadius: 4,
@@ -53,7 +53,7 @@ function drawAverageChart(canvas, members) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Loading…';
+    root.innerHTML = 'Загрузка';
     const response = await fetch('/api/members');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();
@@ -65,11 +65,11 @@ export async function render(root) {
     root.innerHTML = `
     ${hasRatings ? `
       <section class="chart-mini">
-        <span class="chart-mini__label">Harsh vs generous</span>
+        <span class="chart-mini__label">Средняя оценка участника</span>
         <div class="chart-mini__wrap"><canvas id="avgChart"></canvas></div>
       </section>` : ''}
-    ${group('Current members', active)}
-    ${group('Former members', former)}`;
+    ${group('Участники', active)}
+    ${group('Бывшие участники', former)}`;
 
     if (hasRatings) {
         drawAverageChart(document.querySelector('#avgChart'), data.members);

@@ -116,9 +116,9 @@ body {
 .film--worst { box-shadow: inset 3px 0 0 #6b6b73; }
 .badge-worst { color: #9a9aa2; font-weight: 600; }
 
-.chart-mini { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 0.75rem 1rem; background: var(--panel); border-radius: 10px; }
-.chart-mini__label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
-.chart-mini__wrap { flex: 1; height: 90px; }
+.chart-mini { display: block; margin-bottom: 2rem; padding: 0.75rem 1rem; background: var(--panel); border-radius: 10px; }
+.chart-mini__label { display: block; margin-bottom: 0.5rem; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.chart-mini__wrap { height: 100px; }
 
 .section-title { margin: 2.5rem 0 1rem; }
 .cards { margin-bottom: 0; }

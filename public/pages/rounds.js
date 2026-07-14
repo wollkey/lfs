@@ -1,4 +1,4 @@
-import { letterboxdLink, posterImg } from '../helpers.js';
+import {letterboxdLink, pluralWith, posterImg} from '../helpers.js';
 
 let chart = null;
 let sortMode = 'position';
@@ -11,23 +11,23 @@ const SORTS = {
 };
 
 const SORT_LABELS = {
-    position: 'In order',
-    best: 'Best first',
-    worst: 'Worst first',
+    position: 'По порядку',
+    best: 'Лучшие',
+    worst: 'Худшие',
 };
 
 function formatDate(iso) {
     if (iso === null) return null;
     const [y, m, d] = iso.split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(y, m - 1, d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function dateRange(round) {
     const from = formatDate(round.startedOn);
     const to = formatDate(round.endedOn);
     if (from === null && to === null) return '';
-    if (to === null) return `${from} → present`;
-    if (from === null) return `until ${to}`;
+    if (to === null) return `${from} → сейчас`;
+    if (from === null) return `до ${to}`;
     return `${from} → ${to}`;
 }
 
@@ -39,8 +39,8 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
 
     const parts = [];
     if (film.pickedBy !== null) parts.push(`picked by ${letterboxdLink(film.pickedBy)}`);
-    if (isWinner) parts.push(`<span class="badge-winner">★ Winner</span>`);
-    if (isWorst)  parts.push(`<span class="badge-worst">▼ Worst</span>`);
+    if (isWinner) parts.push(`<span class="badge-winner">★ Победитель</span>`);
+    if (isWorst)  parts.push(`<span class="badge-worst">▼ Худший</span>`);
     const sub = parts.join(' · ');
 
     const modifier = isWinner ? 'film--winner' : isWorst ? 'film--worst' : '';
@@ -53,7 +53,7 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
         <span class="film__sub">${sub}</span>
       </div>
       <div class="film__stats">
-        <span class="film__votes">${film.votes} votes</span>
+        <span class="film__votes">${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])}</span>
         <span class="film__avg">${avg}</span>
       </div>
     </li>`;
@@ -71,10 +71,10 @@ function roundSection(round) {
     return `
     <details class="round" data-round="${round.number}" ${isOpen ? 'open' : ''}>
       <summary class="round__head">
-        <span class="round__num">Round ${round.number}</span>
+        <span class="round__num">Раунд ${round.number}</span>
         ${dates === '' ? '' : `<span class="round__dates">${dates}</span>`}
-        <span class="round__count">${round.films.length} films</span>
-        ${round.average === null ? '' : `<span class="round__avg">avg ${round.average}</span>`}
+        <span class="round__count">${round.films.length} фильмов</span>
+        ${round.average === null ? '' : `<span class="round__avg">средняя ${round.average}</span>`}
       </summary>
       <ul class="round__films">${rows}</ul>
     </details>`;
@@ -108,13 +108,13 @@ function drawAveragesChart(canvas, rounds) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Loading…';
+    root.innerHTML = 'Загрузка';
     const response = await fetch('/api/rounds');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();
 
     if (data.rounds.length === 0) {
-        root.innerHTML = `<p class="placeholder">No rounds yet.</p>`;
+        root.innerHTML = `<p class="placeholder">Пока нет раундов</p>`;
         return;
     }
 
@@ -133,7 +133,7 @@ export async function render(root) {
     root.innerHTML = `
     ${hasAverages ? `
       <section class="chart-mini">
-        <span class="chart-mini__label">Динамика оценок</span>
+        <span class="chart-mini__label">Средняя оценка по кругам</span>
         <div class="chart-mini__wrap"><canvas id="roundsChart"></canvas></div>
       </section>` : ''}
 

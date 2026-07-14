@@ -1,4 +1,4 @@
-import { letterboxdLink, posterImg } from '../helpers.js';
+import {letterboxdLink, pluralWith, posterImg} from '../helpers.js';
 
 let sortMode = 'title';
 
@@ -34,7 +34,7 @@ function filmRow(film) {
         <span class="film__sub">${sub}</span>
       </div>
       <div class="film__stats">
-        <span class="film__votes">${film.votes} оценок</span>
+        <span class="film__votes">${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])}</span>
         <span class="film__avg">${avg}</span>
       </div>
     </li>`;
