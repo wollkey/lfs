@@ -41,7 +41,6 @@ function filmRow(film) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Загрузка…';
     const response = await fetch('/api/films');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();

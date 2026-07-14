@@ -108,7 +108,6 @@ function drawAveragesChart(canvas, rounds) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Загрузка';
     const response = await fetch('/api/rounds');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();

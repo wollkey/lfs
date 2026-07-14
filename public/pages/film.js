@@ -13,7 +13,6 @@ function ratingRow(r) {
 }
 
 export async function render(root, params) {
-    root.innerHTML = 'Загрузка';
     const response = await fetch(`/api/films/${encodeURIComponent(params.slug)}`);
 
     if (response.status === 404) {

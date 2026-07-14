@@ -25,7 +25,11 @@ function group(title, members) {
     </section>`;
 }
 
+let chart = null;
+
 function drawAverageChart(canvas, members) {
+    if (chart !== null) chart.destroy();
+
     const rated = members
         .filter((m) => m.averageGiven !== null)
         .sort((a, b) => b.averageGiven - a.averageGiven);
@@ -53,7 +57,6 @@ function drawAverageChart(canvas, members) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Загрузка';
     const response = await fetch('/api/members');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();

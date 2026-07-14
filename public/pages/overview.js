@@ -54,7 +54,6 @@ function memberCard(label, member, valueText, metaText) {
 }
 
 export async function render(root) {
-    root.innerHTML = 'Загрузка';
     const response = await fetch('/api/overview');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     const data = await response.json();

@@ -49,9 +49,17 @@ function renderCurrent() {
         return;
     }
 
-    Promise.resolve(matched.render(view, matched.params)).catch((err) => {
-        view.innerHTML = `<p class="error">Ошибка загрузки: ${err.message}</p>`;
-    });
+    const timer = setTimeout(() => view.classList.add('view--loading'), 200);
+
+    Promise.resolve(matched.render(view, matched.params))
+        .catch((err) => {
+            console.error(err);
+            view.innerHTML = `<p class="error">Не удалось загрузить данные</p>`;
+        })
+        .finally(() => {
+            clearTimeout(timer);
+            view.classList.remove('view--loading');
+        });
 }
 
 function navigate(path) {
