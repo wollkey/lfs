@@ -8,6 +8,7 @@ require __DIR__ . '/../vendor/autoload.php';
 use App\Console\FetchFixturesCommand;
 use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
+use App\Console\RoundsScaffoldCommand;
 use App\Console\SeedBuildCommand;
 use App\Console\SeedLoadCommand;
 use App\Console\SeedMembersCommand;
@@ -43,5 +44,6 @@ $app->addCommand(new FetchFixturesCommand());
 $app->addCommand(new SeedLoadCommand($films, $rounds, $ratings));
 $app->addCommand(new SeedBuildCommand($listParser, $ratingParser));
 $app->addCommand(new FetchPostersCommand($listParser));
+$app->addCommand(new RoundsScaffoldCommand($listParser));
 
 $app->run();

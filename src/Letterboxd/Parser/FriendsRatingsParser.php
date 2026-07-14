@@ -9,7 +9,7 @@ use Symfony\Component\DomCrawler\Crawler;
 
 final class FriendsRatingsParser
 {
-    private const string ROW = 'table.member-table tbody tr';
+    private const string ROW = 'table.reactions-table tbody tr';
     private const string NAME_LINK = 'td.col-member a.name';
     private const string RATING = 'td.col-rating span.rating';
 
@@ -26,6 +26,11 @@ final class FriendsRatingsParser
             ->each(fn (Crawler $tr): ?ParsedRating => $this->rating($tr));
 
         return array_values(array_filter($ratings));
+    }
+
+    public function slug(string $html): ?string
+    {
+        return preg_match('~/friends/film/([^/]+)/~', $html, $m) === 1 ? $m[1] : null;
     }
 
     private function rating(Crawler $tr): ?ParsedRating
@@ -59,6 +64,12 @@ final class FriendsRatingsParser
 
         $class = $node->attr('class') ?? '';
 
-        return preg_match('/rated-(\d+)/', $class, $m) === 1 ? (int) $m[1] : null;
+        if (preg_match('/\brated-(\d+)\b/', $class, $m) !== 1) {
+            return null;
+        }
+
+        $score = (int) $m[1];
+
+        return $score >= 1 && $score <= 10 ? $score : null;
     }
 }

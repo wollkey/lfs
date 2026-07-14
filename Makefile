@@ -50,6 +50,10 @@ fetch-posters: ## DEV: download posters from data/list.html into public/posters/
 	@$(CONSOLE) posters:fetch
 .PHONY: fetch-posters
 
+rounds-scaffold: ## DEV: generate rounds.seed.json skeleton (fill pickedBy by hand after)
+	@$(CONSOLE) rounds:scaffold
+.PHONY: rounds-scaffold
+
 fresh: ## Recreate empty DB + seed roster (DROPS DATA)
 	@rm -f $(DB)
 	@$(MAKE) migrate
