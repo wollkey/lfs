@@ -1,8 +1,9 @@
 import {letterboxdLink, pluralWith, posterImg} from '../helpers.js';
 
-let sortMode = 'title';
+let sortMode = 'position';
 
 const SORTS = {
+    position: (a, b) => (a.round ?? 0) - (b.round ?? 0) || (a.position ?? 0) - (b.position ?? 0),
     title:  (a, b) => a.title.localeCompare(b.title),
     best:   (a, b) => (b.average ?? -1) - (a.average ?? -1),
     worst:  (a, b) => (a.average ?? 11) - (b.average ?? 11),
@@ -11,18 +12,19 @@ const SORTS = {
 };
 
 const SORT_LABELS = {
+    position: 'По порядку',
     title: 'По названию',
     best: 'Лучшие',
     worst: 'Худшие',
     votes: 'По оценкам',
-    round: 'По раундам',
+    round: 'По кругам',
 };
 
 function filmRow(film) {
     const avg = film.average === null ? '—' : film.average;
 
     const parts = [];
-    if (film.round !== null)    parts.push(`Раунд ${film.round}`);
+    if (film.round !== null)    parts.push(`Круг ${film.round}`);
     if (film.pickedBy !== null) parts.push(`выбрал ${letterboxdLink(film.pickedBy)}`);
     const sub = parts.join(' · ');
 

@@ -24,7 +24,7 @@ export async function render(root, params) {
     const film = await response.json();
 
     const parts = [];
-    if (film.round !== null)    parts.push(`Раунд ${film.round}`);
+    if (film.round !== null)    parts.push(`Круг ${film.round}`);
     if (film.pickedBy !== null) parts.push(`выбрал ${letterboxdLink(film.pickedBy)}`);
     const sub = parts.join(' · ');
 

@@ -71,7 +71,7 @@ function roundSection(round) {
     return `
     <details class="round" data-round="${round.number}" ${isOpen ? 'open' : ''}>
       <summary class="round__head">
-        <span class="round__num">Раунд ${round.number}</span>
+        <span class="round__num">Круг ${round.number}</span>
         ${dates === '' ? '' : `<span class="round__dates">${dates}</span>`}
         <span class="round__count">${round.films.length} фильмов</span>
         ${round.average === null ? '' : `<span class="round__avg">средняя ${round.average}</span>`}
@@ -99,7 +99,7 @@ function drawAveragesChart(canvas, rounds) {
         options: {
             maintainAspectRatio: false,
             scales: {
-                y: { min: 0, max: 10, ticks: { color: '#8a8a92', stepSize: 5 }, grid: { color: '#26262c' } },
+                y: { min: 5, max: 8, ticks: { color: '#8a8a92', stepSize: 1 }, grid: { color: '#26262c' } },
                 x: { ticks: { color: '#8a8a92' }, grid: { display: false } },
             },
             plugins: { legend: { display: false } },
@@ -113,15 +113,17 @@ export async function render(root) {
     const data = await response.json();
 
     if (data.rounds.length === 0) {
-        root.innerHTML = `<p class="placeholder">Пока нет раундов</p>`;
+        root.innerHTML = `<p class="placeholder">Пока нет кругов</p>`;
         return;
     }
 
-    const byNumber = [...data.rounds].sort((a, b) => a.number - b.number);
+    const byNumber = [...data.rounds].sort((a, b) => b.number - a.number);
+    const chronological = [...byNumber].sort((a, b) => a.number - b.number);
     const hasAverages = byNumber.some((r) => r.average !== null);
 
     if (openRounds === null) {
-        openRounds = new Set([byNumber[byNumber.length - 1].number]);
+        const latest = Math.max(...byNumber.map((r) => r.number));
+        openRounds = new Set([latest]);
     }
 
     const sortButtons = Object.keys(SORTS).map((mode) => `
@@ -146,7 +148,7 @@ export async function render(root) {
     </div>`;
 
     if (hasAverages) {
-        drawAveragesChart(document.querySelector('#roundsChart'), byNumber);
+        drawAveragesChart(document.querySelector('#roundsChart'), chronological);
     }
 
     root.querySelectorAll('.sort-btn').forEach((btn) => {

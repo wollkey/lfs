@@ -41,6 +41,9 @@ body {
 .nav__link { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
 .nav__link:hover { color: var(--text); }
 .nav__link--active { color: var(--accent); }
+.nav { position: relative; background: linear-gradient(180deg, var(--panel) 0%, var(--bg) 100%); margin: -2rem -2rem 2.5rem; padding: 1.25rem 2rem; border-bottom: 1px solid #26262c; display: flex; align-items: baseline; gap: 1.5rem; }
+.nav::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%); }
+
 .placeholder { color: var(--muted); font-style: italic; }
 
 .member-group { margin-bottom: 2.5rem; }
@@ -52,6 +55,8 @@ body {
 .member__stats { display: flex; align-items: center; gap: 1.5rem; }
 .member__watched { color: var(--muted); font-size: 0.9rem; }
 .member__avg { font-size: 1.5rem; font-weight: 700; color: var(--accent); min-width: 2.5rem; text-align: right; }
+.member__avg-wrap { display: flex; flex-direction: column; align-items: flex-end; min-width: 3rem; }
+.member__avg-label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
 .film-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .film { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border-radius: 10px; }
@@ -130,3 +135,7 @@ body {
 
 #view { transition: opacity 0.15s; }
 .view--loading { opacity: 0.4; cursor: progress; }
+
+.hint { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em; border: 1px solid var(--muted); border-radius: 50%; font-size: 0.7rem; color: var(--muted); cursor: help; margin-left: 0.25rem; }
+.hint::after { content: attr(data-tip); position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 240px; padding: 0.5rem 0.7rem; background: #000; color: var(--text); font-size: 0.8rem; line-height: 1.4; text-align: left; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 10; }
+.hint:hover::after { opacity: 1; }

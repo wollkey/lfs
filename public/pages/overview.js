@@ -15,7 +15,7 @@ function filmCard(label, film, statLabel = null) {
 
     const meta = statLabel === null
         ? `${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · разброс ${film.spread}`
-        : `$${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · ${statLabel} ${film.stdDev}`;
+        : `${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · ${statLabel} ${film.stdDev}`;
 
     return `
     <article class="card">
@@ -94,7 +94,7 @@ export async function render(root) {
         'Лучший вкус',
         curator,
         curator === null ? '' : curator.pickedAverage,
-        curator === null ? '' : `средняя по ${curator.picks} зачётным выборам`,
+        curator === null ? '' : `средняя по ${pluralWith(curator.picks, ['зачётному выбору', 'зачётным выборам', 'зачётным выборам'])} <span class="hint" data-tip="Учитываются только фильмы участника, набравшие кворум (≥5 оценок). Показана средняя оценка клуба по ним.">?</span>`,
     )}
     </section>`;
 }
