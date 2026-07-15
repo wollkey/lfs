@@ -136,7 +136,7 @@ final class GuzzleHttpClient implements HttpClient
     private function loginError(mixed $result): string
     {
         if (is_array($result) && is_array($result['messages'] ?? null)) {
-            $messages = array_filter($result['messages'], 'is_string');
+            $messages = array_filter($result['messages'], is_string(...));
             if ($messages !== []) {
                 return 'Login failed: '.implode('; ', $messages);
             }

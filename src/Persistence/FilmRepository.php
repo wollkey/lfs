@@ -6,10 +6,10 @@ namespace App\Persistence;
 
 use App\Domain\Film;
 
-final class FilmRepository
+final readonly class FilmRepository
 {
     public function __construct(
-        private readonly \PDO $pdo,
+        private \PDO $pdo,
     ) {
     }
 

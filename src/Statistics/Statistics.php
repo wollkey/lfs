@@ -6,12 +6,12 @@ namespace App\Statistics;
 
 use App\Domain\MemberStatus;
 
-final class Statistics
+final readonly class Statistics
 {
     public function __construct(
-        private readonly \PDO $pdo,
-        private readonly int $quorum = 5,
-        private readonly int $minCuratorPicks = 2,
+        private \PDO $pdo,
+        private int $quorum = 5,
+        private int $minCuratorPicks = 2,
     ) {
     }
 

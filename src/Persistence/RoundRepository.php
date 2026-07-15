@@ -9,10 +9,10 @@ namespace App\Persistence;
 use App\Domain\Round;
 use PDO;
 
-final class RoundRepository
+final readonly class RoundRepository
 {
     public function __construct(
-        private readonly PDO $pdo,
+        private PDO $pdo,
     ) {
     }
 

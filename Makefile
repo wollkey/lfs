@@ -121,10 +121,10 @@ check: lint-check stan test ## Run all quality checks
 	@echo -e "$(GREEN)✓ All checks passed$(RESET)"
 .PHONY: check
 
-# rector: ## Run Rector refactoring
-# 	@vendor/bin/rector process
-# .PHONY: rector
-#
-# rector-check: ## Check Rector rules (dry run)
-# 	@vendor/bin/rector process --dry-run
-# .PHONY: rector-check
+rector: ## Run Rector refactoring
+	@vendor/bin/rector
+.PHONY: rector
+
+rector-check: ## Check Rector rules (dry run)
+	@vendor/bin/rector --dry-run
+.PHONY: rector-check

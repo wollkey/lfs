@@ -6,10 +6,10 @@ namespace App\Persistence;
 
 use App\Domain\Member;
 
-final class MemberRepository
+final readonly class MemberRepository
 {
     public function __construct(
-        private readonly \PDO $pdo,
+        private \PDO $pdo,
     ) {
     }
 

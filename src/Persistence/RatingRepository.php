@@ -7,10 +7,10 @@ namespace App\Persistence;
 use App\Domain\Rating;
 use App\Domain\Score;
 
-final class RatingRepository
+final readonly class RatingRepository
 {
     public function __construct(
-        private readonly \PDO $pdo,
+        private \PDO $pdo,
     ) {
     }
 
