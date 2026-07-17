@@ -38,11 +38,10 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
     const isWinner = winnerSlug !== null && film.slug === winnerSlug;
     const isWorst = !isWinner && worstSlug !== null && film.slug === worstSlug;
 
-    const parts = [];
-    if (film.pickedBy !== null) parts.push(`выбрал ${letterboxdLink(film.pickedBy)}`);
-    if (isWinner) parts.push(`<span class="badge-winner">★ Победитель</span>`);
-    if (isWorst)  parts.push(`<span class="badge-worst">▼ Худший</span>`);
-    const sub = parts.join(' · ');
+    const badge = isWinner ? `<span class="badge-winner">★ Победитель</span>`
+                : isWorst  ? `<span class="badge-worst">▼ Худший</span>`
+                : '';
+    const sub = film.pickedBy !== null ? `выбрал ${letterboxdLink(film.pickedBy)}` : '';
 
     const modifier = isWinner ? 'film--winner' : isWorst ? 'film--worst' : '';
 
@@ -51,7 +50,8 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
       ${posterImg(film, 'poster--sm')}
       <div class="film__main">
         <a class="film__title" href="${filmUrl(film.slug)}">${esc(film.title)}</a>
-        <span class="film__sub">${sub}</span>
+        ${badge ? `<span class="film__badge">${badge}</span>` : ''}
+        ${sub ? `<span class="film__sub">${sub}</span>` : ''}
       </div>
       <div class="film__stats">
         <span class="stat-mini">

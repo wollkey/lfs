@@ -11,7 +11,7 @@
 
 body {
     margin: 0;
-    padding: 2rem;
+    padding: 0 2rem 2rem;
     font-family: system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
@@ -85,7 +85,7 @@ body {
 .card__stats { margin: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 .error { color: #ff6b6b; }
 
-.nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: baseline; gap: 1.5rem; margin: -2rem -2rem 2.5rem; padding: 1.25rem 2rem; background: rgba(14, 14, 16, 0.72); backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); border-bottom: 1px solid var(--border); }
+.nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: baseline; gap: 1.5rem; margin: 0 -2rem 2.5rem; padding: 1.25rem 2rem; background: rgba(14, 14, 16, 0.72); backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); border-bottom: 1px solid var(--border); }
 .nav::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%); }
 .nav__brand { font-weight: 700; letter-spacing: 0.02em; margin-right: auto; }
 .nav__link { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
@@ -99,7 +99,7 @@ body {
 .member-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .member { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
 .member__avatar { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--border); color: var(--text); font-weight: 600; font-size: 1.1rem; }
-.member__id { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.member__id { display: flex; flex-direction: column; gap: 0.2rem; }
 .member__name { font-weight: 600; }
 .member__stats { display: flex; align-items: flex-start; gap: 2rem; margin-left: auto; }
 
@@ -111,9 +111,10 @@ body {
 
 .film-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .film { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
-.film__main { display: flex; flex-direction: column; gap: 0.15rem; }
+.film__main { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .film__stats { margin-left: auto; display: flex; align-items: flex-start; gap: 1.5rem; }
-.film__sub { color: var(--muted); font-size: 0.85rem; }
+.film__sub { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.film__badge { font-size: 0.85rem; }
 .film__title { font-weight: 600; color: inherit; text-decoration: none; }
 .film__title:hover { color: var(--accent); }
 .back-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
@@ -180,7 +181,7 @@ body {
 .card--member .card__title { margin: 0; }
 .card--member .card__stats { margin-top: 0.6rem; }
 
-#view { transition: opacity 0.15s; }
+#view { transition: opacity 0.15s; overflow-x: clip; }
 .view--loading { opacity: 0.4; cursor: progress; }
 
 .hint { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em; border: 1px solid var(--muted); border-radius: 50%; font-size: 0.7rem; color: var(--muted); cursor: help; margin-left: 0.25rem; }
@@ -190,10 +191,10 @@ body {
 /* ── Mobile (phones & small tablets) ── */
 @media (max-width: 640px) {
     /* Less side padding so blocks don't crowd the screen edges. */
-    body { padding: 1rem; }
+    body { padding: 0 1rem 1rem; }
 
     /* Nav: brand takes the first line, links wrap onto the line below. */
-    .nav { flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: -1rem -1rem 1.75rem; padding: 1rem 1.25rem; }
+    .nav { flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 0 -1rem 1.75rem; padding: 1rem 1.25rem; }
     .nav__brand { width: 100%; margin-right: 0; }
 
     /* Hero: tagline + totals on top, mascot resting on the bottom edge. */
@@ -217,6 +218,8 @@ body {
     .film, .member { padding: 0.75rem 0.9rem; gap: 0.75rem; }
     .film__stats { gap: 0.75rem; }
     .member__stats { gap: 1rem; }
+    /* Правые подписи компактнее — правая колонка уже, нику слева просторнее. */
+    .stat-mini__label { font-size: 0.6rem; }
 
     /* Round summary can wrap when the date range is long. */
     .round__head { flex-wrap: wrap; row-gap: 0.2rem; padding: 0.85rem 1rem; }

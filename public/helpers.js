@@ -12,7 +12,7 @@ export function letterboxdUrl(username) {
     return `https://letterboxd.com/${encodeURIComponent(username)}/`;
 }
 
-export function letterboxdLink(username, label = `@${username}`) {
+export function letterboxdLink(username, label = username) {
     return `<a class="lb-link" href="${letterboxdUrl(username)}" target="_blank" rel="noopener">${esc(label)}</a>`;
 }
 
