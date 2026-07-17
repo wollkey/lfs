@@ -33,7 +33,7 @@ body {
     align-items: flex-end;                /* mascot rests on the block's floor */
     justify-content: space-between;
     gap: 1.5rem;
-    padding: 1.75rem 2rem 0;              /* no bottom padding: mascot bleeds to the edge */
+    padding: 1.5rem 2rem 0;               /* no bottom padding: mascot bleeds to the edge */
     /* Faint warm glow near the mascot, over a soft dark gradient. */
     background:
         radial-gradient(circle at 85% 65%, rgba(224, 160, 77, 0.13), transparent 55%),
@@ -42,8 +42,19 @@ body {
     border-radius: 16px;
     overflow: hidden;
 }
-.hero .totals { align-self: center; margin: 0; }
-.hero__mascot { flex-shrink: 0; align-self: flex-end; display: block; height: 210px; width: auto; }
+.hero__mascot { flex-shrink: 0; align-self: flex-end; display: block; height: 180px; width: auto; }
+
+/* Totals read as one grounded stat bar: thin dividers, no floaty gaps. */
+.hero .totals { align-self: center; margin: 0; gap: 0; }
+.hero .stat { padding: 0 1.5rem; }
+.hero .stat:first-child { padding-left: 0; }
+.hero .stat + .stat { border-left: 1px solid var(--border); }
+.hero .stat__num {
+    background: linear-gradient(180deg, #f2d3a0 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
 
 .totals { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 2rem 0; }
 .stat { display: flex; flex-direction: column; }
@@ -175,6 +186,10 @@ body {
     /* Hero: totals on top, mascot resting on the bottom edge. */
     .hero { flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 1.5rem 0; }
     .hero__mascot { height: 160px; }
+    /* On mobile the grid spaces the stats; drop the desktop divider treatment. */
+    .hero .totals { gap: 0.75rem; }
+    .hero .stat { padding: 0; }
+    .hero .stat + .stat { border-left: none; }
 
     /* Totals: four columns in one row, smaller so they always fit. */
     .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 1.5rem 0; }
