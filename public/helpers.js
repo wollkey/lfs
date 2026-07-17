@@ -20,8 +20,7 @@ export function posterImg(film, className = '') {
     const cls = className ? `poster ${className}` : 'poster';
     return `
     <img class="${cls}" src="/posters/${encodeURIComponent(film.slug)}.jpg"
-         alt="${esc(film.title)}" width="125" height="187"
-         onerror="this.onerror=null; this.src='/posters/_placeholder.svg'">`;
+         alt="${esc(film.title)}" width="125" height="187">`;
 }
 
 const pluralRules = new Intl.PluralRules('ru-RU');

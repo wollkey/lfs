@@ -3,6 +3,7 @@ import { render as films }      from './pages/films.js';
 import { render as filmDetail } from './pages/film.js';
 import { render as rounds }     from './pages/rounds.js';
 import { render as members }    from './pages/members.js';
+import { esc }                  from './helpers.js';
 
 const routes = [
     { path: '/',             render: overview },
@@ -45,7 +46,7 @@ function renderCurrent() {
     highlightNav(path);
 
     if (matched === null) {
-        view.innerHTML = `<p class="error">Страница не найдена: ${path}</p>`;
+        view.innerHTML = `<p class="error">Страница не найдена: ${esc(path)}</p>`;
         return;
     }
 
@@ -80,6 +81,14 @@ document.addEventListener('click', (event) => {
     event.preventDefault();
     navigate(url.pathname);
 });
+
+document.addEventListener('error', (event) => {
+    const img = event.target;
+    if (img.tagName !== 'IMG' || !img.classList.contains('poster')) return;
+    if (img.dataset.fallback) return;                  // guard: don't loop if the placeholder is missing too
+    img.dataset.fallback = '1';
+    img.src = '/posters/_placeholder.svg';
+}, true);
 
 window.addEventListener('popstate', renderCurrent);
 
