@@ -27,6 +27,25 @@ body {
 .lb-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
 .lb-link:hover { color: var(--accent); text-decoration: underline; }
 
+/* ── Overview hero: title + mascot ── */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.75rem 2rem;
+    /* Faint warm glow near the mascot, over a soft dark gradient. */
+    background:
+        radial-gradient(circle at 88% 50%, rgba(224, 160, 77, 0.12), transparent 55%),
+        linear-gradient(135deg, var(--panel) 0%, var(--bg) 70%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+.hero__title { margin: 0; font-size: 2rem; font-weight: 700; letter-spacing: 0.01em; }
+.hero__tagline { margin: 0.6rem 0 0; color: var(--muted); font-size: 1rem; }
+.hero__mascot { flex-shrink: 0; height: 170px; width: auto; }
+
 .totals { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 2rem 0; }
 .stat { display: flex; flex-direction: column; }
 .stat__num { font-size: 2.5rem; font-weight: 700; }
@@ -153,6 +172,12 @@ body {
     /* Nav: brand takes the first line, links wrap onto the line below. */
     .nav { flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: -1rem -1rem 1.75rem; padding: 1rem 1.25rem; }
     .nav__brand { width: 100%; margin-right: 0; }
+
+    /* Hero: stack title above the mascot, centered. */
+    .hero { flex-direction: column; text-align: center; gap: 1rem; padding: 1.5rem; }
+    .hero__title { font-size: 1.6rem; }
+    .hero__tagline { font-size: 0.9rem; }
+    .hero__mascot { height: 130px; }
 
     /* Totals: four columns in one row, smaller so they always fit. */
     .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 1.5rem 0; }

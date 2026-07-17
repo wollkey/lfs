@@ -63,6 +63,14 @@ export async function render(root) {
     const active = data.mostActiveMember;
 
     root.innerHTML = `
+    <section class="hero">
+      <div class="hero__text">
+        <h1 class="hero__title">Last Frame Society</h1>
+        <p class="hero__tagline">Смотрим кино кругами и считаем, что из этого вышло</p>
+      </div>
+      <img class="hero__mascot" src="/mascot.png" alt="">
+    </section>
+
     <section class="totals">
       <div class="stat"><span class="stat__num">${t.films}</span><span class="stat__label">${plural(t.films, ['фильм','фильма','фильмов'])}</span></div>
       <div class="stat"><span class="stat__num">${t.ratings}</span><span class="stat__label">${plural(t.ratings, ['оценка', 'оценки', 'оценок'])}</span></div>
