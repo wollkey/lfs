@@ -169,3 +169,26 @@ rector: ## Run Rector refactoring
 rector-check: ## Check Rector rules (dry run)
 	@$(PHP) vendor/bin/rector --dry-run
 .PHONY: rector-check
+
+##
+## Deployment
+## ----------
+
+DEPLOY_SSH ?= lfs-vds
+REMOTE_DIR := /var/www/lfs
+
+deploy-db: backup ## Push a fresh DB dump to production and restart the app
+	@DUMP=backups/lfs-$(shell date +%F).sql; \
+	scp $$DUMP $(DEPLOY_SSH):/tmp/lfs.sql; \
+	ssh $(DEPLOY_SSH) 'rm -f $(REMOTE_DIR)/data/lfs.sqlite \
+		&& sqlite3 $(REMOTE_DIR)/data/lfs.sqlite < /tmp/lfs.sql \
+		&& chmod 644 $(REMOTE_DIR)/data/lfs.sqlite \
+		&& rm /tmp/lfs.sql \
+		&& docker restart lfs-app'
+	@echo -e "$(GREEN)✓ Database deployed$(RESET)"
+.PHONY: deploy-db
+
+deploy-posters: ## Sync local posters to production
+	@rsync -az --delete public/posters/ $(DEPLOY_SSH):$(REMOTE_DIR)/posters/
+	@echo -e "$(GREEN)✓ Posters deployed$(RESET)"
+.PHONY: deploy-posters

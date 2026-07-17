@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  release:
+    types: [ published ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      -   uses: actions/checkout@v5
+
+      -   uses: docker/setup-buildx-action@v3
+
+      -   uses: docker/login-action@v4
+          with:
+            registry: ${{ env.REGISTRY }}
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+
+      -   uses: docker/build-push-action@v6
+          with:
+            context: .
+            file: .docker/php/Dockerfile
+            target: production
+            push: true
+            tags: |
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+            cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+      -   name: Deploy to VDS
+          uses: appleboy/ssh-action@v1
+          with:
+            host: ${{ secrets.VDS_HOST }}
+            username: ${{ secrets.VDS_USERNAME }}
+            key: ${{ secrets.VDS_SSH_KEY }}
+            script: |
+              set -e
+              echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+              docker pull ghcr.io/${{ github.repository }}:latest
+              docker stop lfs-app || true
+              docker rm lfs-app || true
+              docker run -d \
+                --name lfs-app \
+                --restart unless-stopped \
+                --memory=128m \
+                -e APP_ENV=prod \
+                -v /var/www/lfs/data:/var/www/data:ro \
+                -v /var/www/lfs/posters:/var/www/public/posters:ro \
+                -p 127.0.0.1:8081:8080 \
+                ghcr.io/${{ github.repository }}:latest
+              sleep 3
+              if [ "$(docker ps -q -f name=lfs-app)" ]; then
+                echo "lfs-app is running"
+                docker logs lfs-app --tail=10
+              else
+                echo "lfs-app failed to start"
+                docker logs lfs-app
+                exit 1
+              fi
+              docker image prune -af --filter "until=24h"
