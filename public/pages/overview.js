@@ -64,12 +64,15 @@ export async function render(root) {
 
     root.innerHTML = `
     <section class="hero">
-      <section class="totals">
-        <div class="stat"><span class="stat__num">${t.films}</span><span class="stat__label">${plural(t.films, ['фильм','фильма','фильмов'])}</span></div>
-        <div class="stat"><span class="stat__num">${t.ratings}</span><span class="stat__label">${plural(t.ratings, ['оценка', 'оценки', 'оценок'])}</span></div>
-        <div class="stat"><span class="stat__num">${t.members}</span><span class="stat__label">${plural(t.members, ['участник','участника','участников'])}</span></div>
-        <div class="stat"><span class="stat__num">${num(t.currentRound)}</span><span class="stat__label">${plural(num(t.currentRound), ['круг','круга','кругов'])}</span></div>
-      </section>
+      <div class="hero__text">
+        <p class="hero__tagline">Смотрим кино кругами и считаем, что из этого вышло</p>
+        <section class="totals">
+          <div class="stat"><span class="stat__num">${t.films}</span><span class="stat__label">${plural(t.films, ['фильм','фильма','фильмов'])}</span></div>
+          <div class="stat"><span class="stat__num">${t.ratings}</span><span class="stat__label">${plural(t.ratings, ['оценка', 'оценки', 'оценок'])}</span></div>
+          <div class="stat"><span class="stat__num">${t.members}</span><span class="stat__label">${plural(t.members, ['участник','участника','участников'])}</span></div>
+          <div class="stat"><span class="stat__num">${num(t.currentRound)}</span><span class="stat__label">${plural(num(t.currentRound), ['круг','круга','кругов'])}</span></div>
+        </section>
+      </div>
       <img class="hero__mascot" src="/mascot.png" alt="">
     </section>
 

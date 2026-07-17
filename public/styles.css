@@ -44,8 +44,20 @@ body {
 }
 .hero__mascot { flex-shrink: 0; align-self: flex-end; display: block; height: 180px; width: auto; }
 
+/* Left column fills the block height: tagline at the top, totals at the bottom. */
+.hero__text {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    align-self: stretch;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+}
+.hero__tagline { margin: 0; color: var(--muted); font-size: 1rem; }
+
 /* Totals read as one grounded stat bar: thin dividers, no floaty gaps. */
-.hero .totals { align-self: center; margin: 0; gap: 0; }
+.hero .totals { margin: 0; gap: 0; }
 .hero .stat { padding: 0 1.5rem; }
 .hero .stat:first-child { padding-left: 0; }
 .hero .stat + .stat { border-left: 1px solid var(--border); }
@@ -183,8 +195,9 @@ body {
     .nav { flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: -1rem -1rem 1.75rem; padding: 1rem 1.25rem; }
     .nav__brand { width: 100%; margin-right: 0; }
 
-    /* Hero: totals on top, mascot resting on the bottom edge. */
+    /* Hero: tagline + totals on top, mascot resting on the bottom edge. */
     .hero { flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 1.5rem 0; }
+    .hero__text { align-items: stretch; text-align: center; padding-bottom: 0; }
     .hero__mascot { height: 160px; }
     /* On mobile the grid spaces the stats; drop the desktop divider treatment. */
     .hero .totals { gap: 0.75rem; }
