@@ -16,7 +16,10 @@ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 
-$pdo = Connection::open(dirname(__DIR__).'/data/lfs.sqlite');
+$databasePath = dirname(__DIR__).'/data/lfs.sqlite';
+$pdo = (getenv('APP_ENV') ?: 'dev') === 'prod'
+    ? Connection::openReadOnly($databasePath)
+    : Connection::open($databasePath);
 $stats = new Statistics($pdo);
 
 $controllers = [

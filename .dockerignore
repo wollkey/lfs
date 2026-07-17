@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+data
+backups
+public/posters
+var
+vendor
+node_modules
+tests
+*.md
