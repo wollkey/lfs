@@ -85,7 +85,7 @@ body {
 .card__stats { margin: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 .error { color: #ff6b6b; }
 
-.nav { position: relative; display: flex; align-items: baseline; gap: 1.5rem; margin: -2rem -2rem 2.5rem; padding: 1.25rem 2rem; background: linear-gradient(180deg, var(--panel) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); }
+.nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: baseline; gap: 1.5rem; margin: -2rem -2rem 2.5rem; padding: 1.25rem 2rem; background: rgba(14, 14, 16, 0.72); backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); border-bottom: 1px solid var(--border); }
 .nav::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%); }
 .nav__brand { font-weight: 700; letter-spacing: 0.02em; margin-right: auto; }
 .nav__link { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
