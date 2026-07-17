@@ -1,4 +1,4 @@
-import { letterboxdLink, pluralWith, esc } from '../helpers.js';
+import { letterboxdLink, plural, esc } from '../helpers.js';
 
 let sortMode = 'default';
 let members = null;
@@ -17,17 +17,22 @@ const SORT_LABELS = {
 
 function memberRow(member) {
     const avg = member.averageGiven === null ? '—' : member.averageGiven;
+    const initial = esc(member.displayName.trim().charAt(0).toUpperCase());
     return `
     <li class="member">
+      <div class="member__avatar" aria-hidden="true">${initial}</div>
       <div class="member__id">
         <span class="member__name">${esc(member.displayName)}</span>
         ${letterboxdLink(member.username)}
       </div>
       <div class="member__stats">
-        <span class="member__watched">${pluralWith(member.watched, ['просмотр', 'просмотра', 'просмотров'])}</span>
-        <span class="member__avg-wrap">
-          <span class="member__avg">${avg}</span>
-          <span class="member__avg-label">средняя</span>
+        <span class="stat-mini">
+          <span class="stat-mini__num">${member.watched}</span>
+          <span class="stat-mini__label">${plural(member.watched, ['просмотр', 'просмотра', 'просмотров'])}</span>
+        </span>
+        <span class="stat-mini stat-mini--accent">
+          <span class="stat-mini__num">${avg}</span>
+          <span class="stat-mini__label">средняя</span>
         </span>
       </div>
     </li>`;

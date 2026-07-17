@@ -97,14 +97,17 @@ body {
 .member-group { margin-bottom: 2.5rem; }
 .member-group__title { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
 .member-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.member { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
-.member__id { display: flex; flex-direction: column; }
+.member { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+.member__avatar { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--border); color: var(--text); font-weight: 600; font-size: 1.1rem; }
+.member__id { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .member__name { font-weight: 600; }
-.member__stats { display: flex; align-items: center; gap: 1.5rem; }
-.member__watched { color: var(--muted); font-size: 0.9rem; }
-.member__avg { font-size: 1.5rem; font-weight: 700; color: var(--accent); min-width: 2.5rem; text-align: right; }
-.member__avg-wrap { display: flex; flex-direction: column; align-items: flex-end; min-width: 3rem; }
-.member__avg-label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.member__stats { display: flex; align-items: flex-start; gap: 2rem; margin-left: auto; }
+
+/* Compact "number over label" stat — both member stats share it, so they align. */
+.stat-mini { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
+.stat-mini__num { font-size: 1.35rem; font-weight: 700; line-height: 1; }
+.stat-mini__label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-mini--accent .stat-mini__num { color: var(--accent); }
 
 .film-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .film { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
@@ -216,7 +219,7 @@ body {
     .film, .member { padding: 0.75rem 0.9rem; gap: 0.75rem; }
     .film__stats { gap: 0.75rem; }
     .member__stats { gap: 1rem; }
-    .film__avg, .member__avg { font-size: 1.35rem; }
+    .film__avg { font-size: 1.35rem; }
 
     /* Round summary can wrap when the date range is long. */
     .round__head { flex-wrap: wrap; row-gap: 0.2rem; padding: 0.85rem 1rem; }
