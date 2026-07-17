@@ -1,16 +1,26 @@
+export function esc(value) {
+    return String(value).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[ch]));
+}
+
+export function filmUrl(slug) {
+    return `/films/${encodeURIComponent(slug)}`;
+}
+
 export function letterboxdUrl(username) {
-    return `https://letterboxd.com/${username}/`;
+    return `https://letterboxd.com/${encodeURIComponent(username)}/`;
 }
 
 export function letterboxdLink(username, label = `@${username}`) {
-    return `<a class="lb-link" href="${letterboxdUrl(username)}" target="_blank" rel="noopener">${label}</a>`;
+    return `<a class="lb-link" href="${letterboxdUrl(username)}" target="_blank" rel="noopener">${esc(label)}</a>`;
 }
 
 export function posterImg(film, className = '') {
     const cls = className ? `poster ${className}` : 'poster';
     return `
-    <img class="${cls}" src="/posters/${film.slug}.jpg"
-         alt="${film.title}" width="125" height="187"
+    <img class="${cls}" src="/posters/${encodeURIComponent(film.slug)}.jpg"
+         alt="${esc(film.title)}" width="125" height="187"
          onerror="this.onerror=null; this.src='/posters/_placeholder.svg'">`;
 }
 

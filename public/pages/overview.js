@@ -1,4 +1,4 @@
-import {posterImg, letterboxdLink, pluralWith, plural} from '../helpers.js';
+import {posterImg, letterboxdLink, pluralWith, plural, esc, filmUrl} from '../helpers.js';
 
 function num(value) {
     return value === null ? '—' : value;
@@ -21,9 +21,9 @@ function filmCard(label, film, statLabel = null) {
     <article class="card">
       <p class="card__label">${label}</p>
       <div class="card__body">
-        <a href="/films/${film.slug}">${posterImg(film, 'poster--card')}</a>
+        <a href="${filmUrl(film.slug)}">${posterImg(film, 'poster--card')}</a>
         <div class="card__info">
-          <h3 class="card__title"><a class="card__link" href="/films/${film.slug}">${film.title}</a></h3>
+          <h3 class="card__title"><a class="card__link" href="${filmUrl(film.slug)}">${esc(film.title)}</a></h3>
           <p class="card__stats">
             <span class="card__avg">${film.average}</span>
             <span class="card__meta">${meta}</span>
@@ -44,7 +44,7 @@ function memberCard(label, member, valueText, metaText) {
     return `
     <article class="card card--member">
       <p class="card__label">${label}</p>
-      <h3 class="card__title">${member.displayName}</h3>
+      <h3 class="card__title">${esc(member.displayName)}</h3>
       ${letterboxdLink(member.username)}
       <p class="card__stats">
         <span class="card__avg">${valueText}</span>

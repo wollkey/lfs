@@ -1,10 +1,10 @@
-import { letterboxdLink, posterImg } from '../helpers.js';
+import { letterboxdLink, posterImg, esc } from '../helpers.js';
 
 function ratingRow(r) {
     return `
     <li class="rating">
       <div class="rating__who">
-        <span class="rating__name">${r.displayName}</span>
+        <span class="rating__name">${esc(r.displayName)}</span>
         ${letterboxdLink(r.username)}
       </div>
       <div class="rating__bar"><span class="rating__fill" style="width: ${r.score * 10}%"></span></div>
@@ -16,7 +16,7 @@ export async function render(root, params) {
     const response = await fetch(`/api/films/${encodeURIComponent(params.slug)}`);
 
     if (response.status === 404) {
-        root.innerHTML = `<p class="placeholder">Фильм не найден: ${params.slug}</p>`;
+        root.innerHTML = `<p class="placeholder">Фильм не найден: ${esc(params.slug)}</p>`;
         return;
     }
     if (!response.ok) throw new Error(`API статус ${response.status}`);
@@ -49,7 +49,7 @@ export async function render(root, params) {
       <div class="film-detail__head">
         ${posterImg(film, 'poster--lg')}
         <div class="film-detail__meta">
-          <h1 class="film-detail__title">${film.title}</h1>
+          <h1 class="film-detail__title">${esc(film.title)}</h1>
           <p class="film-detail__sub">${sub}</p>
           <div class="film-detail__score">
             <span class="film-detail__avg">${avg}</span>

@@ -1,6 +1,7 @@
-import {letterboxdLink, pluralWith, posterImg} from '../helpers.js';
+import {letterboxdLink, pluralWith, posterImg, esc, filmUrl} from '../helpers.js';
 
 let sortMode = 'position';
+let films = null;
 
 const SORTS = {
     position: (a, b) => (a.round ?? 0) - (b.round ?? 0) || (a.position ?? 0) - (b.position ?? 0),
@@ -32,7 +33,7 @@ function filmRow(film) {
     <li class="film">
       ${posterImg(film, 'poster--sm')}
       <div class="film__main">
-        <a class="film__title" href="/films/${film.slug}">${film.title}</a>
+        <a class="film__title" href="${filmUrl(film.slug)}">${esc(film.title)}</a>
         <span class="film__sub">${sub}</span>
       </div>
       <div class="film__stats">
@@ -42,17 +43,13 @@ function filmRow(film) {
     </li>`;
 }
 
-export async function render(root) {
-    const response = await fetch('/api/films');
-    if (!response.ok) throw new Error(`API статус ${response.status}`);
-    const data = await response.json();
-
-    if (data.films.length === 0) {
+function draw(root) {
+    if (films.length === 0) {
         root.innerHTML = `<p class="placeholder">Пока нет фильмов.</p>`;
         return;
     }
 
-    const films = [...data.films].sort(SORTS[sortMode]);
+    const sorted = [...films].sort(SORTS[sortMode]);
 
     const sortButtons = Object.keys(SORTS).map((mode) => `
     <button class="sort-btn ${mode === sortMode ? 'sort-btn--active' : ''}" data-sort="${mode}">
@@ -64,12 +61,19 @@ export async function render(root) {
       <span class="rounds-toolbar__label">Сортировка</span>
       <div class="sort-group">${sortButtons}</div>
     </div>
-    <ul class="film-list">${films.map(filmRow).join('')}</ul>`;
+    <ul class="film-list">${sorted.map(filmRow).join('')}</ul>`;
 
     root.querySelectorAll('.sort-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
             sortMode = btn.dataset.sort;
-            render(root);
+            draw(root);           // redraw from cache, no network
         });
     });
+}
+
+export async function render(root) {
+    const response = await fetch('/api/films');
+    if (!response.ok) throw new Error(`API статус ${response.status}`);
+    films = (await response.json()).films;
+    draw(root);
 }

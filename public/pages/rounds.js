@@ -1,8 +1,9 @@
-import {letterboxdLink, pluralWith, posterImg} from '../helpers.js';
+import {letterboxdLink, pluralWith, posterImg, esc, filmUrl} from '../helpers.js';
 
 let chart = null;
 let sortMode = 'position';
 let openRounds = null;
+let rounds = null;
 
 const SORTS = {
     position: (a, b) => (a.position ?? 0) - (b.position ?? 0),
@@ -49,7 +50,7 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
     <li class="film ${modifier}">
       ${posterImg(film, 'poster--sm')}
       <div class="film__main">
-        <a class="film__title" href="/films/${film.slug}">${film.title}</a>
+        <a class="film__title" href="${filmUrl(film.slug)}">${esc(film.title)}</a>
         <span class="film__sub">${sub}</span>
       </div>
       <div class="film__stats">
@@ -107,17 +108,13 @@ function drawAveragesChart(canvas, rounds) {
     });
 }
 
-export async function render(root) {
-    const response = await fetch('/api/rounds');
-    if (!response.ok) throw new Error(`API статус ${response.status}`);
-    const data = await response.json();
-
-    if (data.rounds.length === 0) {
+function draw(root) {
+    if (rounds.length === 0) {
         root.innerHTML = `<p class="placeholder">Пока нет кругов</p>`;
         return;
     }
 
-    const byNumber = [...data.rounds].sort((a, b) => b.number - a.number);
+    const byNumber = [...rounds].sort((a, b) => b.number - a.number);
     const chronological = [...byNumber].sort((a, b) => a.number - b.number);
     const hasAverages = byNumber.some((r) => r.average !== null);
 
@@ -154,7 +151,7 @@ export async function render(root) {
     root.querySelectorAll('.sort-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
             sortMode = btn.dataset.sort;
-            render(root);
+            draw(root);
         });
     });
 
@@ -165,4 +162,11 @@ export async function render(root) {
             else openRounds.delete(number);
         });
     });
+}
+
+export async function render(root) {
+    const response = await fetch('/api/rounds');
+    if (!response.ok) throw new Error(`API статус ${response.status}`);
+    rounds = (await response.json()).rounds;
+    draw(root);
 }

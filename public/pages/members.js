@@ -1,6 +1,7 @@
-import { letterboxdLink, pluralWith } from '../helpers.js';
+import { letterboxdLink, pluralWith, esc } from '../helpers.js';
 
 let sortMode = 'default';
+let members = null;
 
 const SORTS = {
     default: () => 0,
@@ -19,7 +20,7 @@ function memberRow(member) {
     return `
     <li class="member">
       <div class="member__id">
-        <span class="member__name">${member.displayName}</span>
+        <span class="member__name">${esc(member.displayName)}</span>
         ${letterboxdLink(member.username)}
       </div>
       <div class="member__stats">
@@ -42,14 +43,10 @@ function group(title, members) {
     </section>`;
 }
 
-export async function render(root) {
-    const response = await fetch('/api/members');
-    if (!response.ok) throw new Error(`API статус ${response.status}`);
-    const data = await response.json();
-
+function draw(root) {
     const sortWithin = (list) => sortMode === 'default' ? list : [...list].sort(SORTS[sortMode]);
-    const active = sortWithin(data.members.filter((m) => m.status === 'active'));
-    const former = sortWithin(data.members.filter((m) => m.status === 'former'));
+    const active = sortWithin(members.filter((m) => m.status === 'active'));
+    const former = sortWithin(members.filter((m) => m.status === 'former'));
 
     const sortButtons = Object.keys(SORTS).map((mode) => `
     <button class="sort-btn ${mode === sortMode ? 'sort-btn--active' : ''}" data-sort="${mode}">
@@ -67,7 +64,14 @@ export async function render(root) {
     root.querySelectorAll('.sort-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
             sortMode = btn.dataset.sort;
-            render(root);
+            draw(root);           // redraw from cache, no network
         });
     });
+}
+
+export async function render(root) {
+    const response = await fetch('/api/members');
+    if (!response.ok) throw new Error(`API статус ${response.status}`);
+    members = (await response.json()).members;
+    draw(root);
 }
