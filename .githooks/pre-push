@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Running code quality checks before push..."
+
+make check
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Code quality checks failed!"
+    echo "Fix the issues or use 'git push --no-verify' to bypass."
+    exit 1
+fi
+
+echo "✅ All checks passed!"
+exit 0

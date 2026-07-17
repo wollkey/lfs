@@ -192,3 +192,13 @@ deploy-posters: ## Sync local posters to production
 	@rsync -az --delete public/posters/ $(DEPLOY_SSH):$(REMOTE_DIR)/posters/
 	@echo -e "$(GREEN)✓ Posters deployed$(RESET)"
 .PHONY: deploy-posters
+
+##
+## Git Hooks
+## ---------
+
+hooks: ## Install git hooks
+	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-push
+	@echo -e "$(GREEN)✓ Git hooks installed$(RESET)"
+.PHONY: hooks
