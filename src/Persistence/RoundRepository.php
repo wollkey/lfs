@@ -50,6 +50,63 @@ final readonly class RoundRepository
         ]);
     }
 
+    public function syncFilm(int $round, string $filmSlug, int $position): void
+    {
+        $stmt = $this->pdo->prepare(<<<SQL
+                INSERT INTO round_films (round_number, film_slug, picked_by, position)
+                VALUES (:round, :film, NULL, :pos)
+                ON CONFLICT (round_number, film_slug) DO UPDATE
+                    SET position = excluded.position
+            SQL);
+
+        $stmt->execute([
+            'round' => $round,
+            'film' => $filmSlug,
+            'pos' => $position,
+        ]);
+    }
+
+    public function setPicker(int $round, string $filmSlug, string $username): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE round_films SET picked_by = :user WHERE round_number = :round AND film_slug = :film',
+        );
+
+        $stmt->execute(['user' => $username, 'round' => $round, 'film' => $filmSlug]);
+    }
+
+    /**
+     * @return list<array{round: int, slug: string, title: string}>
+     */
+    public function filmsWithoutPicker(?int $round = null): array
+    {
+        $sql = <<<SQL
+                SELECT rf.round_number AS round, rf.film_slug AS slug, f.title AS title
+                FROM round_films rf
+                JOIN films f ON f.slug = rf.film_slug
+                WHERE rf.picked_by IS NULL
+            SQL;
+
+        $params = [];
+        if ($round !== null) {
+            $sql .= ' AND rf.round_number = :round';
+            $params['round'] = $round;
+        }
+        $sql .= ' ORDER BY rf.round_number, rf.position';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return array_map(
+            static fn (array $row) => [
+                'round' => (int) $row['round'],
+                'slug' => $row['slug'],
+                'title' => $row['title'],
+            ],
+            $stmt->fetchAll(),
+        );
+    }
+
     public function ensure(int $number): void
     {
         $stmt = $this->pdo->prepare(

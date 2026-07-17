@@ -34,25 +34,17 @@ migrate: init ## Apply pending migrations
 	@$(CONSOLE) migrate
 .PHONY: migrate
 
-seed-members: ## Insert or update the club roster
+seed-members: ## Insert or update the club roster from data/roster.json
 	@$(CONSOLE) members:seed
 .PHONY: seed-members
 
-seed-build: ## DEV: parse local HTML into data/ratings.seed.json (make seed-build DIR=path/to/html)
-	@$(CONSOLE) seed:build $(DIR)
-.PHONY: seed-build
-
-seed-load: ## Load seed JSON into the database (safe on prod)
-	@$(CONSOLE) seed:load
-.PHONY: seed-load
+seed: ## Parse local HTML into the DB (films, ratings, round structure)
+	@$(CONSOLE) seed $(DIR)
+.PHONY: seed
 
 fetch-posters: ## DEV: download posters from data/list.html into public/posters/
 	@$(CONSOLE) posters:fetch
 .PHONY: fetch-posters
-
-rounds-scaffold: ## DEV: generate rounds.seed.json skeleton (fill pickedBy by hand after)
-	@$(CONSOLE) rounds:scaffold
-.PHONY: rounds-scaffold
 
 fresh: ## Recreate empty DB + seed roster (DROPS DATA)
 	@rm -f $(DB)
@@ -65,17 +57,13 @@ fresh: ## Recreate empty DB + seed roster (DROPS DATA)
 ## Data entry
 ## ----------
 
-rate: ## Set a rating: make rate FILM=slug MEMBER=user SCORE=9
-	@$(CONSOLE) rating:set $(FILM) $(MEMBER) $(SCORE)
+rate: ## Add a member's ratings interactively (film by title, score 1–10)
+	@$(CONSOLE_TTY) rating:add
 .PHONY: rate
 
-show: ## Show ratings for a film: make show FILM=slug
-	@$(CONSOLE) film:show $(FILM)
-.PHONY: show
-
-import: ## Rebuild from saved HTML: make import SRC=tests/Fixtures
-	@$(CONSOLE) import:html $(SRC)
-.PHONY: import
+pick: ## Assign film pickers interactively (films without a picker)
+	@$(CONSOLE_TTY) rounds:pick
+.PHONY: pick
 
 fetch-fixtures: ## DEV: scrape HTML (needs LBXD_USER/LBXD_PASS; may be blocked)
 	@$(CONSOLE) fixtures:fetch

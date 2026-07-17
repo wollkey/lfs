@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Persistence;
 
 use App\Domain\Member;
+use App\Domain\MemberStatus;
 
 final readonly class MemberRepository
 {
@@ -47,7 +48,7 @@ final readonly class MemberRepository
     public function all(): array
     {
         return array_map(
-            static fn (array $r) => new Member($r['username'], $r['display_name'], $r['status'], $r['position']),
+            static fn (array $r) => new Member($r['username'], $r['display_name'], MemberStatus::from($r['status']), $r['position']),
             $this->pdo->query('SELECT username, display_name, status, position FROM members ORDER BY display_name')->fetchAll(),
         );
     }

@@ -43,4 +43,16 @@ final readonly class RatingRepository
             $stmt->fetchAll(),
         );
     }
+
+    public function findScore(string $filmSlug, string $username): ?int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT score FROM ratings WHERE film_slug = :film AND member_username = :user',
+        );
+        $stmt->execute(['film' => $filmSlug, 'user' => $username]);
+
+        $score = $stmt->fetchColumn();
+
+        return $score === false ? null : (int) $score;
+    }
 }
