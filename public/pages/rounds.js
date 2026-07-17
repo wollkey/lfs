@@ -1,4 +1,4 @@
-import {letterboxdLink, pluralWith, posterImg, esc, filmUrl} from '../helpers.js';
+import {letterboxdLink, plural, posterImg, esc, filmUrl} from '../helpers.js';
 
 let chart = null;
 let sortMode = 'position';
@@ -39,7 +39,7 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
     const isWorst = !isWinner && worstSlug !== null && film.slug === worstSlug;
 
     const parts = [];
-    if (film.pickedBy !== null) parts.push(`picked by ${letterboxdLink(film.pickedBy)}`);
+    if (film.pickedBy !== null) parts.push(`выбрал ${letterboxdLink(film.pickedBy)}`);
     if (isWinner) parts.push(`<span class="badge-winner">★ Победитель</span>`);
     if (isWorst)  parts.push(`<span class="badge-worst">▼ Худший</span>`);
     const sub = parts.join(' · ');
@@ -54,8 +54,14 @@ function roundFilmRow(film, winnerSlug, worstSlug) {
         <span class="film__sub">${sub}</span>
       </div>
       <div class="film__stats">
-        <span class="film__votes">${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])}</span>
-        <span class="film__avg">${avg}</span>
+        <span class="stat-mini">
+          <span class="stat-mini__num">${film.votes}</span>
+          <span class="stat-mini__label">${plural(film.votes, ['оценка', 'оценки', 'оценок'])}</span>
+        </span>
+        <span class="stat-mini stat-mini--accent">
+          <span class="stat-mini__num">${avg}</span>
+          <span class="stat-mini__label">средняя</span>
+        </span>
       </div>
     </li>`;
 }
