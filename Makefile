@@ -177,13 +177,14 @@ rector-check: ## Check Rector rules (dry run)
 DEPLOY_SSH ?= lfs-vds
 REMOTE_DIR := /var/www/lfs
 
-deploy-db: backup ## Push a fresh DB dump to production and restart the app
-	@DUMP=backups/lfs-$(shell date +%F).sql; \
-	scp $$DUMP $(DEPLOY_SSH):/tmp/lfs.sql; \
-	ssh $(DEPLOY_SSH) 'rm -f $(REMOTE_DIR)/data/lfs.sqlite \
-		&& sqlite3 $(REMOTE_DIR)/data/lfs.sqlite < /tmp/lfs.sql \
+deploy-db: backup ## Copy the DB file to production and restart the app
+	@SNAP=backups/lfs-$(shell date +%F).sqlite; \
+	rm -f $$SNAP; \
+	$(PHP) sqlite3 $(DB) "VACUUM INTO '$$SNAP'"; \
+	scp $$SNAP $(DEPLOY_SSH):/tmp/lfs.sqlite; \
+	ssh $(DEPLOY_SSH) 'rm -f $(REMOTE_DIR)/data/lfs.sqlite $(REMOTE_DIR)/data/lfs.sqlite-wal $(REMOTE_DIR)/data/lfs.sqlite-shm \
+		&& mv /tmp/lfs.sqlite $(REMOTE_DIR)/data/lfs.sqlite \
 		&& chmod 644 $(REMOTE_DIR)/data/lfs.sqlite \
-		&& rm /tmp/lfs.sql \
 		&& docker restart lfs-app'
 	@echo -e "$(GREEN)✓ Database deployed$(RESET)"
 .PHONY: deploy-db
