@@ -97,11 +97,43 @@ body {
 .member-group { margin-bottom: 2.5rem; }
 .member-group__title { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
 .member-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.member { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+.member { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.member__row { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; }
+.member__row--toggle { cursor: pointer; list-style: none; user-select: none; }
+.member__row--toggle::-webkit-details-marker { display: none; }
+.member__row--toggle::before { content: '▸'; color: var(--muted); transition: transform 0.15s; }
+.member[open] .member__row--toggle::before { transform: rotate(90deg); }
+.member__row--toggle:hover { background: #1d1d22; }
 .member__avatar { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--border); color: var(--text); font-weight: 600; font-size: 1.1rem; }
 .member__id { display: flex; flex-direction: column; gap: 0.2rem; }
 .member__name { font-weight: 600; }
 .member__stats { display: flex; align-items: flex-start; gap: 2rem; margin-left: auto; }
+
+.member__body { padding: 0.35rem 1.25rem 1.1rem; border-top: 1px solid var(--border); }
+.member-block { margin-top: 1rem; }
+.member-block__title { margin: 0 0 0.6rem; color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.member-block__empty { margin: 0; color: var(--muted); font-style: italic; font-size: 0.9rem; }
+
+/* Two content-width columns packed left, so the score sits right by its title. */
+.pick-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, max-content) max-content; column-gap: 1.25rem; row-gap: 0.4rem; align-items: baseline; }
+.pick { display: contents; }
+.pick__title { color: var(--text); text-decoration: none; font-size: 0.9rem; }
+.pick__title:hover { color: var(--accent); }
+.pick__avg { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
+
+.missed-round { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.85rem; margin-bottom: 0.5rem; }
+.missed-round:last-child { margin-bottom: 0; }
+.missed-round--current { box-shadow: inset 3px 0 0 var(--accent); }
+.missed-round__head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; }
+.missed-round__num { font-weight: 600; font-size: 0.85rem; }
+.missed-round__badge { color: var(--accent); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.missed-round__count { margin-left: auto; color: var(--muted); font-size: 0.8rem; }
+.missed-round__films { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.missed__link { color: var(--text); text-decoration: none; font-size: 0.9rem; }
+.missed__link:hover { color: var(--accent); }
+/* Older rounds sit quieter; the current round stays full-strength. */
+.missed-round:not(.missed-round--current) .missed-round__num,
+.missed-round:not(.missed-round--current) .missed__link { color: var(--muted); }
 
 /* Compact "number over label" stat — both member stats share it, so they align. */
 .stat-mini { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
@@ -215,7 +247,7 @@ body {
     .card { min-width: 100%; }
 
     /* List rows: tighter padding and gaps. */
-    .film, .member { padding: 0.75rem 0.9rem; gap: 0.75rem; }
+    .film, .member__row { padding: 0.75rem 0.9rem; gap: 0.75rem; }
     .film__stats { gap: 0.75rem; }
     .member__stats { gap: 1rem; }
     /* Правые подписи компактнее — правая колонка уже, нику слева просторнее. */
