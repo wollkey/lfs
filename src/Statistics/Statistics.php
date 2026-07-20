@@ -111,6 +111,88 @@ final readonly class Statistics
     }
 
     /**
+     * Films an active member has not rated. Each ListedFilm keeps its round,
+     * so the frontend can group them by round.
+     *
+     * @return array<string, ListedFilm[]>
+     */
+    public function missedByMember(): array
+    {
+        $rows = $this->pdo->query(<<<SQL
+                SELECT m.username, f.slug, f.title, rf.round_number, rf.picked_by, rf.position
+                FROM members m
+                CROSS JOIN round_films rf
+                JOIN films f ON f.slug = rf.film_slug
+                WHERE m.status = 'active'
+                  AND NOT EXISTS (
+                    SELECT 1 FROM ratings r
+                    WHERE r.film_slug = rf.film_slug
+                      AND r.member_username = m.username
+                  )
+                ORDER BY m.username, rf.round_number DESC, rf.position
+            SQL)->fetchAll();
+
+        $missed = [];
+        foreach ($rows as $row) {
+            $missed[$row['username']][] = new ListedFilm(
+                $row['slug'],
+                $row['title'],
+                null,
+                0,
+                (int) $row['round_number'],
+                $row['picked_by'],
+                (int) $row['position'],
+                null,
+            );
+        }
+
+        return $missed;
+    }
+
+    public function currentRound(): ?int
+    {
+        $max = $this->pdo->query('SELECT MAX(number) FROM rounds')->fetchColumn();
+
+        return $max === false || $max === null ? null : (int) $max;
+    }
+
+    /**
+     * Films each member has picked, with their average. Former members are
+     * kept — their picks are still club films.
+     *
+     * @return array<string, ListedFilm[]>
+     */
+    public function picksByMember(): array
+    {
+        $rows = $this->pdo->query(<<<SQL
+                SELECT rf.picked_by AS username, f.slug, f.title, rf.round_number, rf.position,
+                       AVG(r.score) AS average, COUNT(r.score) AS votes
+                FROM round_films rf
+                JOIN films f        ON f.slug      = rf.film_slug
+                LEFT JOIN ratings r ON r.film_slug = f.slug
+                WHERE rf.picked_by IS NOT NULL
+                GROUP BY rf.round_number, f.slug
+                ORDER BY rf.picked_by, rf.round_number, rf.position
+            SQL)->fetchAll();
+
+        $picks = [];
+        foreach ($rows as $row) {
+            $picks[$row['username']][] = new ListedFilm(
+                $row['slug'],
+                $row['title'],
+                $row['average'] !== null ? round((float) $row['average'], 1) : null,
+                (int) $row['votes'],
+                (int) $row['round_number'],
+                $row['username'],
+                (int) $row['position'],
+                null,
+            );
+        }
+
+        return $picks;
+    }
+
+    /**
      * @return ListedFilm[]
      */
     public function films(bool $withRatings = false): array
