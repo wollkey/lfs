@@ -15,7 +15,7 @@ function ratingRow(r) {
 function reviewCard(r) {
     return `
     <li class="review">
-      <div class="review__head">
+      <div class="review__who">
         <span class="review__name">${esc(r.displayName)}</span>
         <span class="review__score">${r.score}</span>
       </div>
