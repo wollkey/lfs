@@ -37,10 +37,10 @@ final readonly class Statistics
 
         return new Overview(
             $totals,
-            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $b->average <=> $a->average),
-            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $a->average <=> $b->average),
-            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $b->stdDev <=> $a->stdDev),
-            $this->pickFilm($rated, static fn (RatedFilm $a, RatedFilm $b) => $a->stdDev <=> $b->stdDev),
+            $this->topFilms($rated, static fn (RatedFilm $f) => $f->average, true),
+            $this->topFilms($rated, static fn (RatedFilm $f) => $f->average, false),
+            $this->topFilms($rated, static fn (RatedFilm $f) => $f->stdDev, true),
+            $this->topFilms($rated, static fn (RatedFilm $f) => $f->stdDev, false),
             $this->mostActiveMember($members),
             $this->bestCurator($members),
         );
@@ -428,6 +428,26 @@ final readonly class Statistics
         usort($films, $comparator);
 
         return $films[0];
+    }
+
+    /**
+     * All films sharing the extreme value of $metric — the whole tie, not one.
+     *
+     * @param RatedFilm[]                $films
+     * @param callable(RatedFilm): float $metric
+     *
+     * @return RatedFilm[]
+     */
+    private function topFilms(array $films, callable $metric, bool $highest): array
+    {
+        if ($films === []) {
+            return [];
+        }
+
+        $values = array_map($metric, $films);
+        $target = $highest ? max($values) : min($values);
+
+        return array_values(array_filter($films, static fn (RatedFilm $f) => $metric($f) === $target));
     }
 
     /**

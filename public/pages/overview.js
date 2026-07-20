@@ -4,22 +4,12 @@ function num(value) {
     return value === null ? '—' : value;
 }
 
-function filmCard(label, film, statLabel = null) {
-    if (film === null) {
-        return `
-      <article class="card">
-        <p class="card__label">${label}</p>
-        <p class="card__empty">Пока мало оценок</p>
-      </article>`;
-    }
-
+function filmBlock(film, statLabel) {
     const meta = statLabel === null
         ? `${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · разброс ${film.spread}`
         : `${pluralWith(film.votes, ['оценка', 'оценки', 'оценок'])} · ${statLabel} ${film.stdDev}`;
 
     return `
-    <article class="card">
-      <p class="card__label">${label}</p>
       <div class="card__body">
         <a href="${filmUrl(film.slug)}">${posterImg(film, 'poster--card')}</a>
         <div class="card__info">
@@ -29,7 +19,24 @@ function filmCard(label, film, statLabel = null) {
             <span class="card__meta">${meta}</span>
           </p>
         </div>
-      </div>
+      </div>`;
+}
+
+// films — the whole tie (usually one film); render a block per film.
+// labels — [singular, plural]; the plural shows only when the tie has more than one.
+function filmCard([one, many], films, statLabel = null) {
+    if (films.length === 0) {
+        return `
+      <article class="card">
+        <p class="card__label">${one}</p>
+        <p class="card__empty">Пока мало оценок</p>
+      </article>`;
+    }
+
+    return `
+    <article class="card">
+      <p class="card__label">${films.length > 1 ? many : one}</p>
+      <div class="card__films">${films.map((f) => filmBlock(f, statLabel)).join('')}</div>
     </article>`;
 }
 
@@ -78,14 +85,14 @@ export async function render(root) {
 
     <h2 class="section-title">Фильмы</h2>
     <section class="cards">
-      ${filmCard('Лучший фильм', data.bestFilm)}
-      ${filmCard('Худший фильм', data.worstFilm)}
+      ${filmCard(['Лучший фильм', 'Лучшие фильмы'], data.bestFilm)}
+      ${filmCard(['Худший фильм', 'Худшие фильмы'], data.worstFilm)}
     </section>
 
     <h2 class="section-title">Консенсус</h2>
     <section class="cards">
-      ${filmCard('Самый спорный', data.mostDivisive, 'расхождение')}
-      ${filmCard('Полное согласие', data.mostAgreed, 'расхождение')}
+      ${filmCard(['Самый спорный', 'Самые спорные'], data.mostDivisive, 'расхождение')}
+      ${filmCard(['Полное согласие', 'Полное согласие'], data.mostAgreed, 'расхождение')}
     </section>
 
     <h2 class="section-title">Участники</h2>

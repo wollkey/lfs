@@ -80,8 +80,9 @@ body {
 .card__avg { font-size: 2rem; font-weight: 700; color: var(--accent); }
 .card__meta { color: var(--muted); font-size: 0.85rem; }
 .card__empty { color: var(--muted); font-style: italic; }
+.card__films { display: flex; flex-wrap: wrap; gap: 0.9rem 2rem; }
 .card__body { display: flex; gap: 0.9rem; align-items: flex-start; }
-.card__info { display: flex; flex-direction: column; }
+.card__info { display: flex; flex-direction: column; min-width: 0; }
 .card__stats { margin: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 .error { color: #ff6b6b; }
 
