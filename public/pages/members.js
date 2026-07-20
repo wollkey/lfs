@@ -43,6 +43,15 @@ function picksSection(username) {
     const films = picks[username] ?? [];
     if (films.length === 0) return '';
 
+    // Average of the picks shown here, so the header matches the list below.
+    const scored = films.filter((f) => f.average !== null);
+    const avg = scored.length === 0
+        ? null
+        : Math.round(scored.reduce((sum, f) => sum + f.average, 0) / scored.length * 10) / 10;
+    const title = avg === null
+        ? 'Выбрал'
+        : `Выбрал · средняя <span class="member-block__avg">${avg}</span>`;
+
     const rows = films.map((f) => `
       <li class="pick">
         <a class="pick__title" href="${filmUrl(f.slug)}">${esc(f.title)}</a>
@@ -51,7 +60,7 @@ function picksSection(username) {
 
     return `
     <section class="member-block">
-      <h3 class="member-block__title">Выбрал</h3>
+      <h3 class="member-block__title">${title}</h3>
       <ul class="pick-list">${rows}</ul>
     </section>`;
 }
