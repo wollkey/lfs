@@ -335,7 +335,7 @@ final readonly class Statistics
         }
 
         $ratingRows = $this->fetchAll(<<<SQL
-                SELECT m.username, m.display_name, r.score
+                SELECT m.username, m.display_name, r.score, r.review
                 FROM ratings r
                 JOIN members m ON m.username = r.member_username
                 WHERE r.film_slug = :slug
@@ -347,7 +347,7 @@ final readonly class Statistics
         $spread = $scores === [] ? null : max($scores) - min($scores);
 
         $ratings = array_map(
-            static fn (array $r) => new MemberScore($r['username'], $r['display_name'], (int) $r['score']),
+            static fn (array $r) => new MemberScore($r['username'], $r['display_name'], (int) $r['score'], $r['review']),
             $ratingRows,
         );
 
@@ -521,7 +521,7 @@ final readonly class Statistics
     private function allRatingsGrouped(): array
     {
         $rows = $this->pdo->query(<<<SQL
-                SELECT r.film_slug, m.username, m.display_name, r.score
+                SELECT r.film_slug, m.username, m.display_name, r.score, r.review
                 FROM ratings r
                 JOIN members m ON m.username = r.member_username
                 ORDER BY r.score DESC, m.display_name
@@ -533,6 +533,7 @@ final readonly class Statistics
                 $row['username'],
                 $row['display_name'],
                 (int) $row['score'],
+                $row['review'],
             );
         }
 
