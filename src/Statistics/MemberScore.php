@@ -10,6 +10,7 @@ final readonly class MemberScore
         public string $username,
         public string $displayName,
         public int $score,
+        public ?string $review,
     ) {
     }
 }

@@ -12,6 +12,17 @@ function ratingRow(r) {
     </li>`;
 }
 
+function reviewCard(r) {
+    return `
+    <li class="review">
+      <div class="review__head">
+        <span class="review__name">${esc(r.displayName)}</span>
+        <span class="review__score">${r.score}</span>
+      </div>
+      <p class="review__body">${esc(r.review)}</p>
+    </li>`;
+}
+
 export async function render(root, params) {
     const response = await fetch(`/api/films/${encodeURIComponent(params.slug)}`);
 
@@ -34,6 +45,13 @@ export async function render(root, params) {
     const ratingsHtml = ratings.length === 0
         ? `<p class="placeholder">Пока нет оценок.</p>`
         : `<ul class="rating-list">${ratings.map(ratingRow).join('')}</ul>`;
+
+    const reviews = ratings.filter((r) => r.review !== null && r.review.trim() !== '');
+    const reviewsHtml = reviews.length === 0 ? '' : `
+    <section class="reviews">
+      <h2 class="section-title">Рецензии</h2>
+      <ul class="review-list">${reviews.map(reviewCard).join('')}</ul>
+    </section>`;
 
     const notWatchedHtml = film.notWatched.length === 0 ? '' : `
     <section class="not-watched">
@@ -63,5 +81,7 @@ export async function render(root, params) {
       </section>
 
       ${notWatchedHtml}
+
+      ${reviewsHtml}
     </article>`;
 }
