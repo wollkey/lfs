@@ -83,8 +83,7 @@ final class SeedCommand extends Command
     }
 
     /**
-     * Rebuilds round structure from list order (20/10/10). Positions are upserted;
-     * picked_by is preserved on existing rows and left null on new ones.
+     * Rebuilds round structure (20/10/10) from list order; keeps existing picked_by.
      *
      * @param list<ParsedFilm> $films
      */
@@ -108,13 +107,9 @@ final class SeedCommand extends Command
     }
 
     /**
-     * Loads owner ratings from the list plus friend ratings from friends/{slug}.html.
-     * Returns the "slug|username" key of each rating written, so the caller can
-     * count distinct ratings across sources.
-     *
      * @param list<ParsedFilm> $films
      *
-     * @return list<string>
+     * @return list<string> "slug|username" of each rating written
      */
     private function seedRatings(SymfonyStyle $io, string $htmlDir, string $listHtml, array $films): array
     {
@@ -143,16 +138,11 @@ final class SeedCommand extends Command
     }
 
     /**
-     * Loads member ratings from friends_activity/{username}.html fragments
-     * (saved from /ajax/activity-pagination/{username}/). Optional: the
-     * directory may be absent. Only ratings for club films (present in the list)
-     * are written — activity lists every film a member has rated, most of which
-     * are not club films. Returns the "slug|username" key of each rating written,
-     * so the caller can count distinct ratings across sources.
+     * Optional friends_activity/{username}.html fragments; only club films are kept.
      *
      * @param list<ParsedFilm> $films
      *
-     * @return list<string>
+     * @return list<string> "slug|username" of each rating written
      */
     private function seedActivityRatings(SymfonyStyle $io, string $htmlDir, array $films): array
     {
