@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LFS scraper
 // @namespace    lfs
-// @version      1.1.0
+// @version      1.2.0
 // @description  Grabs Last Frame Society ratings from Letterboxd and POSTs them to the local dev server.
 // @match        https://letterboxd.com/*
 // @grant        GM_xmlhttpRequest
@@ -12,46 +12,27 @@
 (() => {
     'use strict';
 
-    const INGEST = 'http://127.0.0.1:8000/api/ingest';
+    const API = 'http://127.0.0.1:8000/api';
     const LIST_PATH = '/wollkey/list/last-frame-society-1/';
-
-    // Club film slugs, in list order (mirrors data/list.html).
-    const SLUGS = [
-        'citizen-kane', 'mulholland-drive', 'vertigo', 'jeanne-dielman-23-quai-du-commerce-1080-bruxelles',
-        'tokyo-story', 'in-the-mood-for-love', 'the-rules-of-the-game', 'my-friend-ivan-lapshin',
-        'spirited-away', 'man-with-a-movie-camera', 'adams-apples', 'amores-perros', 'heartbeats',
-        'city-of-god', 'drunken-master', 'song-of-the-sea', 'dallas-buyers-club', 'the-number-23',
-        'dogville', 'nymphomaniac-volume-i', 'earth-1930', 'moonlight-2016', 'seven-samurai', 'yi-yi',
-        '2001-a-space-odyssey', 'some-like-it-hot', 'barry-lyndon', 'andrei-rublev', 'pink-flamingos',
-        'blade-runner', 'im-a-cyborg-but-thats-ok', 'das-boot', 'chungking-express', 'the-godfather',
-        'star-wars', 'apocalypse-now', 'its-a-wonderful-life', 'brother-1997', 'the-color-of-pomegranates',
-        'there-will-be-blood', 'everybody-hates-johan', 'the-cranes-are-flying', 'incendies', 'la-dolce-vita',
-        'rashomon', 'chinatown', 'the-matrix', 'mirror', 'the-seventh-seal', 'persona', '12-angry-men',
-        'being-john-malkovich', 'taxi-driver', 'the-good-the-bad-and-the-ugly', 'orlando', 'vagabond',
-        'stalker', 'drive-2011', 'goodfellas',
-    ];
-
-    // Club members; the same endpoint serves everyone, incl. wollkey.
-    const USERNAMES = [
-        'wollkey', 'lenka_penka', 'christallisme', 'psy667', 'al1vka', 'atomic_rage',
-        'nickbiryukov', 'vans_von_trier', 'vika', 'alinafrolova',
-    ];
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     // GM_xmlhttpRequest bypasses CORS / mixed-content / Private Network Access.
-    const post = (type, name, html) => new Promise((resolve, reject) => {
+    const request = (method, url, body) => new Promise((resolve, reject) => {
         GM_xmlhttpRequest({
-            method: 'POST',
-            url: INGEST,
-            headers: {'Content-Type': 'application/json'},
-            data: JSON.stringify({type, name, html}),
+            method,
+            url,
+            headers: body ? {'Content-Type': 'application/json'} : {},
+            data: body,
             onload: res => res.status >= 200 && res.status < 300
-                ? resolve()
-                : reject(new Error(`ingest ${res.status}`)),
-            onerror: () => reject(new Error('ingest failed (is `make up` running?)')),
+                ? resolve(res.responseText)
+                : reject(new Error(`${method} ${url} → ${res.status}`)),
+            onerror: () => reject(new Error('local server unreachable (make up?)')),
         });
     });
+
+    const getJson = async url => JSON.parse(await request('GET', url));
+    const post = (type, name, html) => request('POST', `${API}/ingest`, JSON.stringify({type, name, html}));
 
     async function run(kind, names, urlFor, type, setStatus) {
         const failed = [];
@@ -82,6 +63,21 @@
         setStatus(`${kind}: готово${failed.length ? `, не удалось: ${failed.join(', ')}` : ''}`);
     }
 
+    async function scrapeFilms(setStatus) {
+        setStatus('Фильмы: получаю список…');
+        const {films} = await getJson(`${API}/films`);
+        await run('Фильмы', films.map(f => f.slug),
+            slug => `https://letterboxd.com/wollkey/friends/film/${slug}/`, 'friends', setStatus);
+    }
+
+    async function scrapeActivity(setStatus) {
+        setStatus('Активность: получаю участников…');
+        const {members} = await getJson(`${API}/members`);
+        const users = members.filter(m => m.status === 'active').map(m => m.username);
+        await run('Активность', users,
+            user => `https://letterboxd.com/ajax/activity-pagination/${user}/`, 'activity', setStatus);
+    }
+
     // Scroll to the bottom so lazy posters load their srcset.
     async function loadLazyPosters() {
         let last = -1;
@@ -105,13 +101,8 @@
         await loadLazyPosters();
 
         setStatus('Список: сохраняю…');
-        try {
-            await post('list', '', document.documentElement.outerHTML);
-            setStatus('Список: готово');
-        } catch (e) {
-            console.error('[LFS]', e);
-            setStatus(`Список: ошибка — ${e.message}`);
-        }
+        await post('list', '', document.documentElement.outerHTML);
+        setStatus('Список: готово');
     }
 
     function panel() {
@@ -147,6 +138,9 @@
                 buttons.querySelectorAll('button').forEach(b => (b.disabled = true));
                 try {
                     await task(setStatus);
+                } catch (e) {
+                    console.error('[LFS]', e);
+                    setStatus(`ошибка: ${e.message}`);
                 } finally {
                     buttons.querySelectorAll('button').forEach(b => (b.disabled = false));
                 }
@@ -156,10 +150,8 @@
 
         buttons.append(
             make('Список', scrapeList),
-            make('Фильмы', s => run('Фильмы', SLUGS,
-                slug => `https://letterboxd.com/wollkey/friends/film/${slug}/`, 'friends', s)),
-            make('Активность', s => run('Активность', USERNAMES,
-                user => `https://letterboxd.com/ajax/activity-pagination/${user}/`, 'activity', s)),
+            make('Фильмы', scrapeFilms),
+            make('Активность', scrapeActivity),
         );
 
         box.append(title, buttons, status);
