@@ -58,6 +58,7 @@
         'vagabond',
         'stalker',
         'drive-2011',
+        'goodfellas',
     ];
 
     const dir = await window.showDirectoryPicker({mode: 'readwrite'});
