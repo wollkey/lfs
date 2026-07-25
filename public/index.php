@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
+use App\Http\BadRequest;
 use App\Http\Controller\FilmController;
 use App\Http\Controller\FilmsController;
+use App\Http\Controller\IngestController;
 use App\Http\Controller\MemberController;
 use App\Http\Controller\OverviewController;
 use App\Http\Controller\RoundController;
@@ -16,8 +18,10 @@ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 
+$isProd = (getenv('APP_ENV') ?: 'dev') === 'prod';
+
 $databasePath = dirname(__DIR__).'/data/lfs.sqlite';
-$pdo = (getenv('APP_ENV') ?: 'dev') === 'prod'
+$pdo = $isProd
     ? Connection::openReadOnly($databasePath)
     : Connection::open($databasePath);
 $stats = new Statistics($pdo);
@@ -29,6 +33,10 @@ $controllers = [
     FilmController::class => new FilmController($stats),
     FilmsController::class => new FilmsController($stats),
 ];
+
+if (!$isProd) {
+    $controllers[IngestController::class] = new IngestController(dirname(__DIR__).'/data');
+}
 
 $routes = require dirname(__DIR__).'/config/routes.php';
 $context = new RequestContext(method: $_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -47,6 +55,9 @@ try {
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
 } catch (ResourceNotFoundException|NotFound $e) {
     http_response_code(404);
+    echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+} catch (BadRequest $e) {
+    http_response_code(400);
     echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
 } catch (Throwable) {
     http_response_code(500);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controller\FilmController;
 use App\Http\Controller\FilmsController;
+use App\Http\Controller\IngestController;
 use App\Http\Controller\MemberController;
 use App\Http\Controller\OverviewController;
 use App\Http\Controller\RoundController;
@@ -17,5 +18,9 @@ $routes->add('films', new Route('/api/films', ['_controller' => FilmsController:
 $routes->add('film', new Route('/api/films/{slug}', ['_controller' => FilmController::class]));
 $routes->add('members', new Route('/api/members', ['_controller' => MemberController::class]));
 $routes->add('rounds', new Route('/api/rounds', ['_controller' => RoundController::class]));
+
+if ((getenv('APP_ENV') ?: 'dev') !== 'prod') {
+    $routes->add('ingest', new Route('/api/ingest', ['_controller' => IngestController::class]));
+}
 
 return $routes;
