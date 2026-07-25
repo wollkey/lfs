@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Domain\Film;
+use App\Domain\Member;
 use App\Letterboxd\Dto\ParsedFilm;
+use App\Letterboxd\Parser\ActivityParser;
 use App\Letterboxd\Parser\FriendsRatingsParser;
 use App\Letterboxd\Parser\ListParser;
 use App\Persistence\FilmRepository;
+use App\Persistence\MemberRepository;
 use App\Persistence\RatingRepository;
 use App\Persistence\RoundRepository;
 use Symfony\Component\Console\Attribute\Argument;
@@ -28,7 +31,9 @@ final class SeedCommand extends Command
     public function __construct(
         private readonly ListParser $listParser,
         private readonly FriendsRatingsParser $friendsParser,
+        private readonly ActivityParser $activityParser,
         private readonly FilmRepository $films,
+        private readonly MemberRepository $members,
         private readonly RatingRepository $ratings,
         private readonly RoundRepository $rounds,
     ) {
@@ -53,9 +58,16 @@ final class SeedCommand extends Command
         $this->seedFilms($films);
         $this->seedRounds($films);
 
-        $ratingsLoaded = $this->seedRatings($io, $htmlDir, $listHtml, $films);
+        $written = [
+            ...$this->seedRatings($io, $htmlDir, $listHtml, $films),
+            ...$this->seedActivityRatings($io, $htmlDir, $films),
+        ];
 
-        $io->success(sprintf('Seeded %d film(s) and %d rating(s).', count($films), $ratingsLoaded));
+        $io->success(sprintf(
+            'Seeded %d film(s) and %d rating(s).',
+            count($films),
+            count(array_unique($written)),
+        ));
 
         return Command::SUCCESS;
     }
@@ -97,17 +109,20 @@ final class SeedCommand extends Command
 
     /**
      * Loads owner ratings from the list plus friend ratings from friends/{slug}.html.
-     * Returns the number of ratings written.
+     * Returns the "slug|username" key of each rating written, so the caller can
+     * count distinct ratings across sources.
      *
      * @param list<ParsedFilm> $films
+     *
+     * @return list<string>
      */
-    private function seedRatings(SymfonyStyle $io, string $htmlDir, string $listHtml, array $films): int
+    private function seedRatings(SymfonyStyle $io, string $htmlDir, string $listHtml, array $films): array
     {
-        $loaded = 0;
+        $written = [];
 
         foreach ($this->listParser->ownerRatings($listHtml) as $slug => $rating) {
             $this->ratings->setRating($slug, $rating->username, $rating->rating);
-            ++$loaded;
+            $written[] = "{$slug}|{$rating->username}";
         }
 
         foreach ($films as $film) {
@@ -120,10 +135,58 @@ final class SeedCommand extends Command
             $friendRatings = $this->friendsParser->parse((string) file_get_contents($friendsFile));
             foreach ($friendRatings as $rating) {
                 $this->ratings->setRating($film->slug, $rating->username, $rating->rating);
-                ++$loaded;
+                $written[] = "{$film->slug}|{$rating->username}";
             }
         }
 
-        return $loaded;
+        return $written;
+    }
+
+    /**
+     * Loads member ratings from friends_activity/{username}.html fragments
+     * (saved from /ajax/activity-pagination/{username}/). Optional: the
+     * directory may be absent. Only ratings for club films (present in the list)
+     * are written — activity lists every film a member has rated, most of which
+     * are not club films. Returns the "slug|username" key of each rating written,
+     * so the caller can count distinct ratings across sources.
+     *
+     * @param list<ParsedFilm> $films
+     *
+     * @return list<string>
+     */
+    private function seedActivityRatings(SymfonyStyle $io, string $htmlDir, array $films): array
+    {
+        $activityDir = "{$htmlDir}/friends_activity";
+        if (!is_dir($activityDir)) {
+            return [];
+        }
+
+        $known = array_flip(array_map(static fn (ParsedFilm $film) => $film->slug, $films));
+        $members = array_flip(array_map(static fn (Member $member) => $member->username, $this->members->all()));
+
+        $written = [];
+        foreach (glob("{$activityDir}/*.html") as $file) {
+            $username = basename($file, '.html');
+            if (!isset($members[$username])) {
+                $io->warning(sprintf('Skipping "%s": not a known member.', basename($file)));
+                continue;
+            }
+
+            $ratings = $this->activityParser->parse((string) file_get_contents($file));
+            foreach ($ratings as $slug => $score) {
+                if (!isset($known[$slug])) {
+                    continue;
+                }
+
+                $this->ratings->setRating($slug, $username, $score);
+                $written[] = "{$slug}|{$username}";
+            }
+        }
+
+        if ($written === []) {
+            $io->note(sprintf('No club-film ratings found in "%s".', $activityDir));
+        }
+
+        return $written;
     }
 }

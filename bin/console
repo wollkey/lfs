@@ -12,6 +12,7 @@ use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
 use App\Console\SeedCommand;
 use App\Console\SeedMembersCommand;
+use App\Letterboxd\Parser\ActivityParser;
 use App\Letterboxd\Parser\ListParser;
 use App\Letterboxd\Parser\FriendsRatingsParser;
 use App\Persistence\Connection;
@@ -32,12 +33,13 @@ $rounds = new RoundRepository($pdo);
 
 $listParser = new ListParser();
 $ratingParser = new FriendsRatingsParser();
+$activityParser = new ActivityParser();
 
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedMembersCommand($members));
 $app->addCommand(new FetchFixturesCommand());
-$app->addCommand(new SeedCommand($listParser, $ratingParser, $films, $ratings, $rounds));
+$app->addCommand(new SeedCommand($listParser, $ratingParser, $activityParser, $films, $members, $ratings, $rounds));
 $app->addCommand(new FetchPostersCommand($listParser));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
