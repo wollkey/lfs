@@ -11,9 +11,13 @@ use App\Http\Controller\IngestController;
 use App\Http\Controller\MemberController;
 use App\Http\Controller\OverviewController;
 use App\Http\Controller\RoundController;
+use App\Http\Controller\TelegramWebhookController;
 use App\Http\NotFound;
 use App\Persistence\Connection;
 use App\Statistics\Statistics;
+use App\Telegram\Messages;
+use App\Telegram\PhptgClient;
+use Phptg\BotApi\TelegramBotApi;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
@@ -36,6 +40,16 @@ $controllers = [
 
 if (!$isProd) {
     $controllers[IngestController::class] = new IngestController(dirname(__DIR__).'/data');
+}
+
+$telegramToken = getenv('TELEGRAM_BOT_TOKEN') ?: null;
+$telegramSecret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: null;
+if ($telegramToken !== null && $telegramSecret !== null) {
+    $controllers[TelegramWebhookController::class] = new TelegramWebhookController(
+        new Messages($stats),
+        new PhptgClient(new TelegramBotApi($telegramToken)),
+        $telegramSecret,
+    );
 }
 
 $routes = require dirname(__DIR__).'/config/routes.php';
