@@ -9,10 +9,8 @@ use Phptg\BotApi\FailResult;
 use Phptg\BotApi\TelegramBotApi;
 use Phptg\BotApi\TelegramRuntimeException;
 use Phptg\BotApi\Type\InputFile;
-use Phptg\BotApi\Type\InputMediaPhoto;
 use Phptg\BotApi\Type\InputRichBlock;
 use Phptg\BotApi\Type\InputRichBlockParagraph;
-use Phptg\BotApi\Type\InputRichBlockPhoto;
 use Phptg\BotApi\Type\InputRichBlockSectionHeading;
 use Phptg\BotApi\Type\InputRichBlockTable;
 use Phptg\BotApi\Type\InputRichMessage;
@@ -38,6 +36,19 @@ final readonly class PhptgClient implements TelegramClient
         }
     }
 
+    public function sendPhoto(string $chatId, string $imagePath, string $caption): void
+    {
+        try {
+            $result = $this->api->sendPhoto(chatId: $chatId, photo: new InputFile($imagePath), caption: $caption);
+        } catch (TelegramRuntimeException $e) {
+            throw new ApiException('Telegram sendPhoto failed.', previous: $e);
+        }
+
+        if ($result instanceof FailResult) {
+            throw new ApiException($this->describe('sendPhoto', $result));
+        }
+    }
+
     public function setWebhook(string $url, #[\SensitiveParameter] string $secretToken): void
     {
         try {
@@ -60,10 +71,6 @@ final readonly class PhptgClient implements TelegramClient
 
         if ($post->intro !== null) {
             $blocks[] = new InputRichBlockParagraph($post->intro);
-        }
-
-        if ($post->imagePath !== null) {
-            $blocks[] = new InputRichBlockPhoto(new InputMediaPhoto(new InputFile($post->imagePath)));
         }
 
         if ($post->table !== null) {

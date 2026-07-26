@@ -76,18 +76,6 @@ final class MessagesTest extends IntegrationTestCase
         self::assertSame(['High', 'Low'], array_column($post->table->rows, 1));
     }
 
-    public function testCurrentRoundStandingsAttachesTheConfiguredImage(): void
-    {
-        $this->givenMembers('wollkey', 'lenka');
-        $this->givenRound(1);
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8]);
-        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1);
-
-        $messages = new Messages($this->statistics(quorum: 1), '/opt/uroboros.png');
-
-        self::assertSame('/opt/uroboros.png', $messages->currentRoundStandings()->imagePath);
-    }
-
     public function testCurrentRoundStandingsWithoutRounds(): void
     {
         $post = $this->messages()->currentRoundStandings();

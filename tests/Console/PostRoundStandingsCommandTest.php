@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Console;
 
 use App\Console\PostRoundStandingsCommand;
+use App\Telegram\Card\StandingsCard;
 use App\Telegram\Messages;
+use App\Telegram\Rasterizer;
 use App\Tests\Common\IntegrationTestCase;
+use App\Tests\Telegram\FakeRasterizer;
 use App\Tests\Telegram\RecordingTelegramClient;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Application;
@@ -16,48 +19,81 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(PostRoundStandingsCommand::class)]
 final class PostRoundStandingsCommandTest extends IntegrationTestCase
 {
-    public function testDryRunPrintsWithoutSending(): void
+    public function testPostsTheImageCardToTheConfiguredChat(): void
     {
+        $this->seedRound();
         $client = new RecordingTelegramClient();
-        $tester = $this->tester(new PostRoundStandingsCommand(new Messages($this->statistics()), $client, '123'));
 
-        $exit = $tester->execute(['--dry-run' => true]);
+        $exit = $this->tester($this->command($client, new FakeRasterizer()))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->sent);
+        self::assertCount(1, $client->photos);
+        self::assertSame('-100500', $client->photos[0]['chatId']);
+        self::assertStringContainsString('Круг', $client->photos[0]['caption']);
     }
 
-    public function testPostsStandingsToTheConfiguredChat(): void
+    public function testFallsBackToTheTableWhenRenderingFails(): void
     {
-        $this->givenMembers('wollkey', 'lenka');
-        $this->givenRound(1);
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8]);
-        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1);
-
+        $this->seedRound();
         $client = new RecordingTelegramClient();
-        $command = new PostRoundStandingsCommand(new Messages($this->statistics(quorum: 1)), $client, '-100500');
 
-        $exit = $this->tester($command)->execute([]);
+        $exit = $this->tester($this->command($client, new FakeRasterizer(fail: true)))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
+        self::assertSame([], $client->photos);
         self::assertCount(1, $client->sent);
-        self::assertSame('-100500', $client->sent[0]['chatId']);
-        self::assertContains('Stalker', array_column($client->sent[0]['post']->table->rows, 1));
+        self::assertNotNull($client->sent[0]['post']->table);
     }
 
     public function testReturnsInvalidWhenUnconfigured(): void
     {
-        $command = new PostRoundStandingsCommand(new Messages($this->statistics()), null, null);
+        $command = new PostRoundStandingsCommand(
+            new Messages($this->statistics()),
+            new StandingsCard(),
+            new FakeRasterizer(),
+            null,
+            null,
+        );
 
         self::assertSame(Command::INVALID, $this->tester($command)->execute([]));
     }
 
     public function testReturnsFailureWhenTelegramErrors(): void
     {
+        $this->seedRound();
         $client = new RecordingTelegramClient(fail: true);
-        $command = new PostRoundStandingsCommand(new Messages($this->statistics()), $client, '123');
 
-        self::assertSame(Command::FAILURE, $this->tester($command)->execute([]));
+        self::assertSame(Command::FAILURE, $this->tester($this->command($client, new FakeRasterizer()))->execute([]));
+    }
+
+    public function testDryRunDoesNotSend(): void
+    {
+        $client = new RecordingTelegramClient();
+
+        $exit = $this->tester($this->command($client, new FakeRasterizer()))->execute(['--dry-run' => true]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        self::assertSame([], $client->sent);
+    }
+
+    private function seedRound(): void
+    {
+        $this->givenMembers('wollkey', 'lenka');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8]);
+        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1);
+    }
+
+    private function command(RecordingTelegramClient $client, Rasterizer $rasterizer): PostRoundStandingsCommand
+    {
+        return new PostRoundStandingsCommand(
+            new Messages($this->statistics(quorum: 1)),
+            new StandingsCard(),
+            $rasterizer,
+            $client,
+            '-100500',
+        );
     }
 
     private function tester(PostRoundStandingsCommand $command): CommandTester
