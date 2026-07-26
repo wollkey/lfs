@@ -4,7 +4,7 @@
 /data/
 /backups/
 /public/posters/*.jpg
-/.env
+.env
 
 # IDE
 .idea
