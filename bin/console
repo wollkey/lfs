@@ -10,8 +10,10 @@ use App\Console\AssignPickersCommand;
 use App\Console\FetchFixturesCommand;
 use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
+use App\Console\PostRoundStandingsCommand;
 use App\Console\SeedCommand;
 use App\Console\SeedMembersCommand;
+use App\Console\SetWebhookCommand;
 use App\Letterboxd\Parser\ActivityParser;
 use App\Letterboxd\Parser\ListParser;
 use App\Letterboxd\Parser\FriendsRatingsParser;
@@ -21,6 +23,10 @@ use App\Persistence\MemberRepository;
 use App\Persistence\Migrator;
 use App\Persistence\RatingRepository;
 use App\Persistence\RoundRepository;
+use App\Statistics\Statistics;
+use App\Telegram\Messages;
+use App\Telegram\PhptgClient;
+use Phptg\BotApi\TelegramBotApi;
 use Symfony\Component\Console\Application;
 
 $pdo = Connection::open(__DIR__ . '/../data/lfs.sqlite');
@@ -35,6 +41,18 @@ $listParser = new ListParser();
 $ratingParser = new FriendsRatingsParser();
 $activityParser = new ActivityParser();
 
+$stats = new Statistics($pdo);
+$uroboros = __DIR__ . '/../assets/uroboros.png';
+$messages = new Messages($stats, is_file($uroboros) ? $uroboros : null);
+
+$telegramToken = getenv('TELEGRAM_BOT_TOKEN') ?: null;
+$telegramSecret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: null;
+$telegramChatId = getenv('TELEGRAM_CHAT_ID') ?: null;
+
+$telegramClient = $telegramToken !== null
+    ? new PhptgClient(new TelegramBotApi($telegramToken))
+    : null;
+
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedMembersCommand($members));
@@ -43,5 +61,7 @@ $app->addCommand(new SeedCommand($listParser, $ratingParser, $activityParser, $f
 $app->addCommand(new FetchPostersCommand($listParser));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
+$app->addCommand(new PostRoundStandingsCommand($messages, $telegramClient, $telegramChatId));
+$app->addCommand(new SetWebhookCommand($telegramClient, $telegramSecret));
 
 $app->run();

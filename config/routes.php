@@ -8,6 +8,7 @@ use App\Http\Controller\IngestController;
 use App\Http\Controller\MemberController;
 use App\Http\Controller\OverviewController;
 use App\Http\Controller\RoundController;
+use App\Http\Controller\TelegramWebhookController;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -21,6 +22,10 @@ $routes->add('rounds', new Route('/api/rounds', ['_controller' => RoundControlle
 
 if ((getenv('APP_ENV') ?: 'dev') !== 'prod') {
     $routes->add('ingest', new Route('/api/ingest', ['_controller' => IngestController::class]));
+}
+
+if ((getenv('TELEGRAM_BOT_TOKEN') ?: '') !== '' && (getenv('TELEGRAM_WEBHOOK_SECRET') ?: '') !== '') {
+    $routes->add('telegram', new Route('/api/telegram/webhook', ['_controller' => TelegramWebhookController::class]));
 }
 
 return $routes;

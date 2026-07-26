@@ -4,8 +4,84 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "22dabe5690ea5df83845dd908efc59c5",
+    "content-hash": "0ddb08e7d270a58a9a2c0e60d05091f2",
     "packages": [
+        {
+            "name": "phptg/bot-api",
+            "version": "0.21.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phptg/bot-api.git",
+                "reference": "eddb4363b5339501ecda5e523ad6082c209abee3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phptg/bot-api/zipball/eddb4363b5339501ecda5e523ad6082c209abee3",
+                "reference": "eddb4363b5339501ecda5e523ad6082c209abee3",
+                "shasum": ""
+            },
+            "require": {
+                "php-64bit": "8.2 - 8.5"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "^1.9.1",
+                "ext-curl": "*",
+                "php-http/curl-client": "^2.4.0",
+                "phpunit/phpunit": "^11.5.55",
+                "psr/log": "^3.0.2",
+                "yiisoft/files": "^2.1",
+                "yiisoft/test-support": "^3.2.0"
+            },
+            "suggest": {
+                "ext-curl": "To use `CurlTransport`.",
+                "psr/log": "To log requests to Telegram Bot API and response handling errors."
+            },
+            "type": "library",
+            "extra": {
+                "bamarni-bin": {
+                    "bin-links": true,
+                    "forward-command": true,
+                    "target-directory": "tools"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Phptg\\BotApi\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sergei Predvoditelev",
+                    "homepage": "https://predvoditelev.ru"
+                }
+            ],
+            "description": "PHP library for working with Telegram API",
+            "keywords": [
+                "api",
+                "bot",
+                "telegram"
+            ],
+            "support": {
+                "chat": "https://t.me/predvoditelev_chat",
+                "issues": "https://github.com/phptg/bot-api/issues?state=open",
+                "source": "https://github.com/phptg/bot-api"
+            },
+            "funding": [
+                {
+                    "url": "https://boosty.to/vjik",
+                    "type": "boosty"
+                },
+                {
+                    "url": "https://pay.cloudtips.ru/p/192ce69b",
+                    "type": "cloudtips"
+                }
+            ],
+            "time": "2026-07-14T22:15:21+00:00"
+        },
         {
             "name": "psr/container",
             "version": "2.0.2",
