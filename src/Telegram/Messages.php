@@ -13,7 +13,6 @@ final readonly class Messages
 {
     public function __construct(
         private Statistics $stats,
-        private ?string $postImagePath = null,
     ) {
     }
 
@@ -110,11 +109,7 @@ final readonly class Messages
             ];
         }
 
-        return new Post(
-            $title,
-            new Table(['Место', 'Фильм', 'Средняя', 'Голосов'], $rows),
-            imagePath: $this->postImagePath,
-        );
+        return new Post($title, new Table(['Место', 'Фильм', 'Средняя', 'Голосов'], $rows));
     }
 
     private function rating(?float $value): string

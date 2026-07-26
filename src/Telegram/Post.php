@@ -10,7 +10,6 @@ final readonly class Post
         public string $title,
         public ?Table $table = null,
         public ?string $intro = null,
-        public ?string $imagePath = null,
     ) {
     }
 }

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Console;
 
+use App\Telegram\Card\StandingsCard;
+use App\Telegram\Exception\RenderException;
 use App\Telegram\Exception\TelegramException;
 use App\Telegram\Messages;
 use App\Telegram\Post;
+use App\Telegram\Rasterizer;
 use App\Telegram\TelegramClient;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
@@ -18,6 +21,8 @@ final class PostRoundStandingsCommand extends Command
 {
     public function __construct(
         private readonly Messages $messages,
+        private readonly StandingsCard $card,
+        private readonly Rasterizer $rasterizer,
         private readonly ?TelegramClient $client,
         private readonly ?string $chatId,
     ) {
@@ -26,15 +31,13 @@ final class PostRoundStandingsCommand extends Command
 
     public function __invoke(
         SymfonyStyle $io,
-        #[Option(description: 'Print the message instead of posting it.')]
+        #[Option(description: 'Write the card to var/ instead of posting it.')]
         bool $dryRun = false,
     ): int {
-        $post = $this->messages->currentRoundStandings();
+        $standings = $this->messages->currentRoundStandings();
 
         if ($dryRun) {
-            $io->writeln($this->preview($post));
-
-            return Command::SUCCESS;
+            return $this->dryRun($io, $standings);
         }
 
         if ($this->client === null || $this->chatId === null) {
@@ -43,29 +46,74 @@ final class PostRoundStandingsCommand extends Command
             return Command::INVALID;
         }
 
+        $imagePath = $this->renderCard($standings);
+
         try {
-            $this->client->send($this->chatId, $post);
+            if ($imagePath !== null) {
+                $this->client->sendPhoto($this->chatId, $imagePath, $standings->title);
+            } else {
+                $this->client->send($this->chatId, $standings);
+            }
         } catch (TelegramException $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
+        } finally {
+            if ($imagePath !== null) {
+                @unlink($imagePath);
+            }
         }
 
-        $io->success('Posted current-round standings.');
+        $io->success($imagePath !== null
+            ? 'Posted the standings card.'
+            : 'Posted the standings table (card render unavailable).');
 
         return Command::SUCCESS;
     }
 
-    private function preview(Post $post): string
+    private function renderCard(Post $standings): ?string
+    {
+        if ($standings->table === null) {
+            return null;
+        }
+
+        try {
+            return $this->rasterizer->toPng($this->card->render($standings));
+        } catch (RenderException) {
+            return null;
+        }
+    }
+
+    private function dryRun(SymfonyStyle $io, Post $standings): int
+    {
+        if ($standings->table === null) {
+            $io->writeln($this->previewText($standings));
+
+            return Command::SUCCESS;
+        }
+
+        $svg = $this->card->render($standings);
+        $dir = dirname(__DIR__, 2).'/var';
+        @mkdir($dir, 0o775, true);
+        file_put_contents($dir.'/standings.svg', $svg);
+
+        try {
+            rename($this->rasterizer->toPng($svg), $dir.'/standings.png');
+            $io->success('Wrote var/standings.svg and var/standings.png');
+        } catch (RenderException $e) {
+            $io->warning('Wrote var/standings.svg, but rasterizing failed: '.$e->getMessage());
+            $io->writeln($this->previewText($standings));
+        }
+
+        return Command::SUCCESS;
+    }
+
+    private function previewText(Post $post): string
     {
         $lines = [$post->title];
 
         if ($post->intro !== null) {
             $lines[] = $post->intro;
-        }
-
-        if ($post->imagePath !== null) {
-            $lines[] = '[image] '.$post->imagePath;
         }
 
         if ($post->table !== null) {

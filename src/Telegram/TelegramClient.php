@@ -16,5 +16,10 @@ interface TelegramClient
     /**
      * @throws ApiException
      */
+    public function sendPhoto(string $chatId, string $imagePath, string $caption): void;
+
+    /**
+     * @throws ApiException
+     */
     public function setWebhook(string $url, #[\SensitiveParameter] string $secretToken): void;
 }

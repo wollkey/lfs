@@ -16,6 +16,11 @@ final class RecordingTelegramClient implements TelegramClient
     public array $sent = [];
 
     /**
+     * @var list<array{chatId: string, imagePath: string, caption: string}>
+     */
+    public array $photos = [];
+
+    /**
      * @var list<array{url: string, secretToken: string}>
      */
     public array $webhooks = [];
@@ -32,6 +37,15 @@ final class RecordingTelegramClient implements TelegramClient
         }
 
         $this->sent[] = ['chatId' => $chatId, 'post' => $post];
+    }
+
+    public function sendPhoto(string $chatId, string $imagePath, string $caption): void
+    {
+        if ($this->fail) {
+            throw new ApiException('simulated failure');
+        }
+
+        $this->photos[] = ['chatId' => $chatId, 'imagePath' => $imagePath, 'caption' => $caption];
     }
 
     public function setWebhook(string $url, #[\SensitiveParameter] string $secretToken): void

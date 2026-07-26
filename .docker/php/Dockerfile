@@ -3,7 +3,9 @@ FROM dunglas/frankenphp:php8.5-alpine AS base
 RUN apk add --no-cache \
     icu-dev \
     oniguruma-dev \
-    linux-headers
+    linux-headers \
+    rsvg-convert \
+    fontconfig
 
 RUN docker-php-ext-install \
     intl \
@@ -12,6 +14,10 @@ RUN docker-php-ext-install \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY .docker/caddy/Caddyfile /etc/caddy/Caddyfile
+
+# Fonts for the generated post card (rsvg-convert resolves them via fontconfig).
+COPY assets/fonts/ /usr/share/fonts/lfs/
+RUN fc-cache -f
 
 WORKDIR /var/www
 
