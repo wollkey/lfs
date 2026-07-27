@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Telegram;
 
 use App\Telegram\Card\StandingsCard;
+use App\Telegram\Cell;
 use App\Telegram\Post;
 use App\Telegram\Table;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,7 +18,7 @@ final class StandingsCardTest extends TestCase
     {
         $post = new Post('Круг 5 🎬 итоги недели', new Table(
             ['#', 'Фильм', 'Балл', 'Голосов'],
-            [['1', 'Stalker', '8.9', '8'], ['2', 'Drive', '7.8', '5']],
+            [$this->row('1', 'Stalker', '8.9', '8'), $this->row('2', 'Drive', '7.8', '5')],
         ));
 
         $svg = new StandingsCard()->render($post);
@@ -34,7 +35,7 @@ final class StandingsCardTest extends TestCase
     {
         $post = new Post('Круг 1', new Table(
             ['#', 'Фильм', 'Балл', 'Голосов'],
-            [['1', 'Tom & Jerry <3', '9.0', '4']],
+            [$this->row('1', 'Tom & Jerry <3', '9.0', '4')],
         ));
 
         $svg = new StandingsCard()->render($post);
@@ -47,11 +48,19 @@ final class StandingsCardTest extends TestCase
     {
         $rows = [];
         for ($i = 1; $i <= 7; ++$i) {
-            $rows[] = [(string) $i, 'Film '.$i, '7.0', '5'];
+            $rows[] = $this->row((string) $i, 'Film '.$i, '7.0', '5');
         }
 
         $svg = new StandingsCard()->render(new Post('Круг 2', new Table(['#', 'Фильм', 'Балл', 'Голосов'], $rows)));
 
         self::assertSame(7, substr_count($svg, 'clip-path="url'));
+    }
+
+    /**
+     * @return list<Cell>
+     */
+    private function row(string $rank, string $film, string $score, string $votes): array
+    {
+        return [new Cell($rank), new Cell($film), new Cell($score), new Cell($votes)];
     }
 }

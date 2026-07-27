@@ -7,8 +7,8 @@ namespace App\Telegram;
 final readonly class Table
 {
     /**
-     * @param list<string>       $headers
-     * @param list<list<string>> $rows
+     * @param list<string>     $headers
+     * @param list<list<Cell>> $rows
      */
     public function __construct(
         public array $headers,

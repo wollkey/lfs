@@ -49,7 +49,7 @@ final class PostRoundStandingsCommandTest extends IntegrationTestCase
     public function testReturnsInvalidWhenUnconfigured(): void
     {
         $command = new PostRoundStandingsCommand(
-            new Messages($this->statistics()),
+            new Messages($this->statistics(), 'https://lfs.wollkey.ru'),
             new StandingsCard(),
             new FakeRasterizer(),
             null,
@@ -88,7 +88,7 @@ final class PostRoundStandingsCommandTest extends IntegrationTestCase
     private function command(RecordingTelegramClient $client, Rasterizer $rasterizer): PostRoundStandingsCommand
     {
         return new PostRoundStandingsCommand(
-            new Messages($this->statistics(quorum: 1)),
+            new Messages($this->statistics(quorum: 1), 'https://lfs.wollkey.ru'),
             new StandingsCard(),
             $rasterizer,
             $client,

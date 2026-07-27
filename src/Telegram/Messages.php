@@ -13,6 +13,7 @@ final readonly class Messages
 {
     public function __construct(
         private Statistics $stats,
+        private string $siteUrl,
     ) {
     }
 
@@ -21,6 +22,7 @@ final readonly class Messages
         return match ($this->normalize($command)) {
             'members' => $this->activeMembers(),
             'films' => $this->watchedFilms(),
+            'links' => $this->links(),
             default => null,
         };
     }
@@ -39,10 +41,10 @@ final readonly class Messages
         $rows = [];
         foreach ($active as $index => $member) {
             $rows[] = [
-                (string) ($index + 1),
-                $member->displayName,
-                (string) $member->watched,
-                $this->rating($member->averageGiven),
+                new Cell((string) ($index + 1)),
+                new Cell($member->displayName, $this->letterboxdUrl($member->username)),
+                new Cell((string) $member->watched),
+                new Cell($this->rating($member->averageGiven)),
             ];
         }
 
@@ -51,26 +53,21 @@ final readonly class Messages
 
     public function watchedFilms(): Post
     {
-        $films = array_values(array_filter(
-            $this->stats->films(),
-            static fn (ListedFilm $film): bool => $film->votes > 0,
-        ));
+        return new Post(
+            '🎬 Фильмы',
+            intro: 'Полный список просмотренных фильмов и статистика — на сайте:',
+            links: [new Cell('Открыть список фильмов', $this->siteUrl.'/films')],
+        );
+    }
 
-        if ($films === []) {
-            return new Post('🎬 Просмотренные фильмы', intro: 'Пока нет просмотренных фильмов.');
-        }
-
-        $rows = [];
-        foreach ($films as $film) {
-            $rows[] = [
-                $film->round !== null ? (string) $film->round : '—',
-                $film->title,
-                $this->rating($film->average),
-                (string) $film->votes,
-            ];
-        }
-
-        return new Post('🎬 Просмотренные фильмы', new Table(['Круг', 'Фильм', 'Балл', 'Голосов'], $rows));
+    public function links(): Post
+    {
+        return new Post('🔗 Ссылки клуба', links: [
+            new Cell('Главная', $this->siteUrl.'/'),
+            new Cell('Фильмы', $this->siteUrl.'/films'),
+            new Cell('Круги', $this->siteUrl.'/rounds'),
+            new Cell('Участники', $this->siteUrl.'/members'),
+        ]);
     }
 
     public function currentRoundStandings(): Post
@@ -102,10 +99,10 @@ final readonly class Messages
         $rows = [];
         foreach ($films as $index => $film) {
             $rows[] = [
-                (string) ($index + 1),
-                $film->title,
-                $this->rating($film->average),
-                (string) $film->votes,
+                new Cell((string) ($index + 1)),
+                new Cell($film->title),
+                new Cell($this->rating($film->average)),
+                new Cell((string) $film->votes),
             ];
         }
 
@@ -115,6 +112,11 @@ final readonly class Messages
     private function rating(?float $value): string
     {
         return $value !== null ? number_format($value, 1) : '—';
+    }
+
+    private function letterboxdUrl(string $username): string
+    {
+        return 'https://letterboxd.com/'.$username.'/';
     }
 
     private function normalize(string $command): string

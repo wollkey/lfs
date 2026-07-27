@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Telegram\Card\StandingsCard;
+use App\Telegram\Cell;
 use App\Telegram\Exception\RenderException;
 use App\Telegram\Exception\TelegramException;
 use App\Telegram\Messages;
@@ -119,7 +120,7 @@ final class PostRoundStandingsCommand extends Command
         if ($post->table !== null) {
             $lines[] = implode(' | ', $post->table->headers);
             foreach ($post->table->rows as $row) {
-                $lines[] = implode(' | ', $row);
+                $lines[] = implode(' | ', array_map(static fn (Cell $cell): string => $cell->text, $row));
             }
         }
 

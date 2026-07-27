@@ -45,8 +45,9 @@ if (!$isProd) {
 $telegramToken = getenv('TELEGRAM_BOT_TOKEN') ?: null;
 $telegramSecret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: null;
 if ($telegramToken !== null && $telegramSecret !== null) {
+    $siteUrl = getenv('LFS_SITE_URL') ?: 'https://lfs.wollkey.ru';
     $controllers[TelegramWebhookController::class] = new TelegramWebhookController(
-        new Messages($stats),
+        new Messages($stats, $siteUrl),
         new PhptgClient(new TelegramBotApi($telegramToken)),
         $telegramSecret,
     );

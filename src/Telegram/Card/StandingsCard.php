@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Telegram\Card;
 
+use App\Telegram\Cell;
 use App\Telegram\Post;
 
 /**
@@ -12,7 +13,7 @@ use App\Telegram\Post;
  */
 final readonly class StandingsCard
 {
-    private const int WIDTH = 1080;
+    public const int WIDTH = 1080;
     private const int MARGIN = 56;
     private const int ROWS_TOP = 272;
     private const int ROW_HEIGHT = 76;
@@ -69,14 +70,14 @@ final readonly class StandingsCard
     }
 
     /**
-     * @param list<string> $row rank, film, score, votes
+     * @param list<Cell> $row rank, film, score, votes
      */
     private function row(int $index, array $row, int $filmRight, int $scoreRight, int $votesRight): string
     {
-        $rank = $row[0] ?? '';
-        $film = $row[1] ?? '';
-        $score = $row[2] ?? '';
-        $votes = $row[3] ?? '';
+        $rank = $row[0]->text;
+        $film = $row[1]->text;
+        $score = $row[2]->text;
+        $votes = $row[3]->text;
 
         $top = self::ROWS_TOP + $index * self::ROW_STRIDE;
         $centerY = $top + self::ROW_HEIGHT / 2;

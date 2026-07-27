@@ -44,7 +44,8 @@ $ratingParser = new FriendsRatingsParser();
 $activityParser = new ActivityParser();
 
 $stats = new Statistics($pdo);
-$messages = new Messages($stats);
+$siteUrl = getenv('LFS_SITE_URL') ?: 'https://lfs.wollkey.ru';
+$messages = new Messages($stats, $siteUrl);
 
 $telegramToken = getenv('TELEGRAM_BOT_TOKEN') ?: null;
 $telegramSecret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: null;
@@ -65,7 +66,7 @@ $app->addCommand(new AssignPickersCommand($members, $rounds));
 $app->addCommand(new PostRoundStandingsCommand(
     $messages,
     new StandingsCard(),
-    new RsvgRasterizer(),
+    new RsvgRasterizer(width: StandingsCard::WIDTH * 2),
     $telegramClient,
     $telegramChatId,
 ));

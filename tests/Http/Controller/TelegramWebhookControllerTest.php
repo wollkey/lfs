@@ -45,7 +45,7 @@ final class TelegramWebhookControllerTest extends TestCase
         $stats = new Statistics(Connection::open(':memory:'));
 
         return new TelegramWebhookController(
-            new Messages($stats),
+            new Messages($stats, 'https://lfs.wollkey.ru'),
             new RecordingTelegramClient(),
             'secret-token',
         );

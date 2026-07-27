@@ -10,11 +10,15 @@ use Phptg\BotApi\TelegramBotApi;
 use Phptg\BotApi\TelegramRuntimeException;
 use Phptg\BotApi\Type\InputFile;
 use Phptg\BotApi\Type\InputRichBlock;
+use Phptg\BotApi\Type\InputRichBlockList;
+use Phptg\BotApi\Type\InputRichBlockListItem;
 use Phptg\BotApi\Type\InputRichBlockParagraph;
 use Phptg\BotApi\Type\InputRichBlockSectionHeading;
 use Phptg\BotApi\Type\InputRichBlockTable;
 use Phptg\BotApi\Type\InputRichMessage;
 use Phptg\BotApi\Type\RichBlockTableCell;
+use Phptg\BotApi\Type\RichText;
+use Phptg\BotApi\Type\RichTextUrl;
 
 final readonly class PhptgClient implements TelegramClient
 {
@@ -77,6 +81,10 @@ final readonly class PhptgClient implements TelegramClient
             $blocks[] = $this->table($post->table);
         }
 
+        if ($post->links !== []) {
+            $blocks[] = $this->linkList($post->links);
+        }
+
         return $blocks;
     }
 
@@ -90,13 +98,31 @@ final readonly class PhptgClient implements TelegramClient
         $cells = [$header];
         foreach ($table->rows as $row) {
             $line = [];
-            foreach ($row as $value) {
-                $line[] = new RichBlockTableCell('left', 'middle', $value);
+            foreach ($row as $cell) {
+                $line[] = new RichBlockTableCell('left', 'middle', $this->richText($cell));
             }
             $cells[] = $line;
         }
 
         return new InputRichBlockTable($cells, isBordered: true, isStriped: true);
+    }
+
+    /**
+     * @param list<Cell> $links
+     */
+    private function linkList(array $links): InputRichBlockList
+    {
+        $items = [];
+        foreach ($links as $link) {
+            $items[] = new InputRichBlockListItem([new InputRichBlockParagraph($this->richText($link))]);
+        }
+
+        return new InputRichBlockList($items);
+    }
+
+    private function richText(Cell $cell): string|RichText
+    {
+        return $cell->url !== null ? new RichTextUrl($cell->text, $cell->url) : $cell->text;
     }
 
     private function describe(string $method, FailResult $result): string
