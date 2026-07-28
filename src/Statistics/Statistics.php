@@ -41,8 +41,8 @@ final readonly class Statistics
             $this->topFilms($rated, static fn (RatedFilm $f) => $f->average, false),
             $this->topFilms($rated, static fn (RatedFilm $f) => $f->stdDev, true),
             $this->topFilms($rated, static fn (RatedFilm $f) => $f->stdDev, false),
-            $this->mostActiveMember($members),
-            $this->bestCurator($members),
+            $this->mostActiveMembers($members),
+            $this->bestCurators($members),
         );
     }
 
@@ -472,38 +472,54 @@ final readonly class Statistics
     }
 
     /**
+     * All active members sharing the highest watch count — the whole tie.
+     *
      * @param MemberStats[] $members
+     *
+     * @return MemberStats[]
      */
-    private function mostActiveMember(array $members): ?MemberStats
+    private function mostActiveMembers(array $members): array
     {
         $watched = array_filter($members, static fn (MemberStats $m) => $m->watched > 0);
 
-        if ($watched === []) {
-            return null;
-        }
-
-        usort($watched, static fn (MemberStats $a, MemberStats $b) => $b->watched <=> $a->watched);
-
-        return $watched[0];
+        return $this->topMembers($watched, static fn (MemberStats $m) => (float) $m->watched);
     }
 
     /**
+     * All qualified curators sharing the highest average — the whole tie.
+     *
      * @param MemberStats[] $members
+     *
+     * @return MemberStats[]
      */
-    private function bestCurator(array $members): ?MemberStats
+    private function bestCurators(array $members): array
     {
-        $qualified = array_values(array_filter(
+        $qualified = array_filter(
             $members,
             fn (MemberStats $m) => $m->picks >= $this->minCuratorPicks && $m->pickedAverage !== null,
-        ));
+        );
 
-        if ($qualified === []) {
-            return null;
+        return $this->topMembers($qualified, static fn (MemberStats $m) => (float) $m->pickedAverage);
+    }
+
+    /**
+     * All members sharing the highest value of $metric — the whole tie, not one.
+     *
+     * @param MemberStats[]                $members
+     * @param callable(MemberStats): float $metric
+     *
+     * @return MemberStats[]
+     */
+    private function topMembers(array $members, callable $metric): array
+    {
+        if ($members === []) {
+            return [];
         }
 
-        usort($qualified, static fn (MemberStats $a, MemberStats $b) => $b->pickedAverage <=> $a->pickedAverage);
+        $values = array_map($metric, $members);
+        $target = max($values);
 
-        return $qualified[0];
+        return array_values(array_filter($members, static fn (MemberStats $m) => $metric($m) === $target));
     }
 
     /**

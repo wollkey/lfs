@@ -7,12 +7,14 @@ namespace App\Statistics;
 final readonly class Overview
 {
     /**
-     * Each film record is the whole tie: all films sharing the top value.
+     * Each record is the whole tie: all entries sharing the top value.
      *
-     * @param RatedFilm[] $bestFilm
-     * @param RatedFilm[] $worstFilm
-     * @param RatedFilm[] $mostDivisive
-     * @param RatedFilm[] $mostAgreed
+     * @param RatedFilm[]   $bestFilm
+     * @param RatedFilm[]   $worstFilm
+     * @param RatedFilm[]   $mostDivisive
+     * @param RatedFilm[]   $mostAgreed
+     * @param MemberStats[] $mostActiveMember
+     * @param MemberStats[] $bestCurator
      */
     public function __construct(
         public Totals $totals,
@@ -20,8 +22,8 @@ final readonly class Overview
         public array $worstFilm,
         public array $mostDivisive,
         public array $mostAgreed,
-        public ?MemberStats $mostActiveMember,
-        public ?MemberStats $bestCurator,
+        public array $mostActiveMember,
+        public array $bestCurator,
     ) {
     }
 }

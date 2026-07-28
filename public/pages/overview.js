@@ -40,23 +40,33 @@ function filmCard([one, many], films, statLabel = null) {
     </article>`;
 }
 
-function memberCard(label, member, valueText, metaText) {
-    if (member === null) {
+function memberBlock(member, value, meta) {
+    return `
+      <div class="card__member">
+        <h3 class="card__title">${esc(member.displayName)}</h3>
+        ${letterboxdLink(member.username)}
+        <p class="card__stats">
+          <span class="card__avg">${value(member)}</span>
+          <span class="card__meta">${meta(member)}</span>
+        </p>
+      </div>`;
+}
+
+// members — the whole tie (usually one member); render a block per member.
+// labels — [singular, plural]; the plural shows only when the tie has more than one.
+function memberCard([one, many], members, value, meta) {
+    if (members.length === 0) {
         return `
       <article class="card">
-        <p class="card__label">${label}</p>
+        <p class="card__label">${one}</p>
         <p class="card__empty">Пока мало данных</p>
       </article>`;
     }
+
     return `
     <article class="card card--member">
-      <p class="card__label">${label}</p>
-      <h3 class="card__title">${esc(member.displayName)}</h3>
-      ${letterboxdLink(member.username)}
-      <p class="card__stats">
-        <span class="card__avg">${valueText}</span>
-        <span class="card__meta">${metaText}</span>
-      </p>
+      <p class="card__label">${members.length > 1 ? many : one}</p>
+      <div class="card__members">${members.map((m) => memberBlock(m, value, meta)).join('')}</div>
     </article>`;
 }
 
@@ -98,16 +108,16 @@ export async function render(root) {
     <h2 class="section-title">Участники</h2>
     <section class="cards">
       ${memberCard(
-        'Самый активный',
+        ['Самый активный', 'Самые активные'],
         active,
-        active === null ? '' : active.watched,
-        'посмотрено фильмов',
+        (m) => m.watched,
+        () => 'посмотрено фильмов',
     )}
       ${memberCard(
-        'Лучший вкус',
+        ['Лучший вкус', 'Лучший вкус'],
         curator,
-        curator === null ? '' : curator.pickedAverage,
-        curator === null ? '' : `средняя по ${pluralWith(curator.picks, ['зачётному выбору', 'зачётным выборам', 'зачётным выборам'])} <span class="hint" data-tip="Учитываются только фильмы участника, набравшие кворум (≥5 оценок). Показана средняя оценка клуба по ним.">?</span>`,
+        (m) => m.pickedAverage,
+        (m) => `средняя по ${pluralWith(m.picks, ['зачётному выбору', 'зачётным выборам', 'зачётным выборам'])} <span class="hint" data-tip="Учитываются только фильмы участника, набравшие кворум (≥5 оценок). Показана средняя оценка клуба по ним.">?</span>`,
     )}
     </section>`;
 }
