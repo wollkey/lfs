@@ -17,6 +17,7 @@ final readonly class ListedFilm
         public ?int $round,
         public ?string $pickedBy,
         public ?int $position,
+        public ?string $pickedOn = null,
         public ?array $ratings = null,
     ) {
     }

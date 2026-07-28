@@ -32,11 +32,11 @@ final readonly class RoundRepository
         ]);
     }
 
-    public function addFilm(int $round, string $filmSlug, ?string $pickedBy, int $position): void
+    public function addFilm(int $round, string $filmSlug, ?string $pickedBy, int $position, string $pickedOn): void
     {
         $stmt = $this->pdo->prepare(<<<SQL
-                INSERT INTO round_films (round_number, film_slug, picked_by, position)
-                VALUES (:round, :film, :by, :pos)
+                INSERT INTO round_films (round_number, film_slug, picked_by, position, picked_on)
+                VALUES (:round, :film, :by, :pos, :picked)
                 ON CONFLICT (round_number, film_slug) DO UPDATE
                     SET picked_by = excluded.picked_by,
                         position  = excluded.position
@@ -47,14 +47,15 @@ final readonly class RoundRepository
             'film' => $filmSlug,
             'by' => $pickedBy,
             'pos' => $position,
+            'picked' => $pickedOn,
         ]);
     }
 
-    public function syncFilm(int $round, string $filmSlug, int $position): void
+    public function syncFilm(int $round, string $filmSlug, int $position, string $pickedOn): void
     {
         $stmt = $this->pdo->prepare(<<<SQL
-                INSERT INTO round_films (round_number, film_slug, picked_by, position)
-                VALUES (:round, :film, NULL, :pos)
+                INSERT INTO round_films (round_number, film_slug, picked_by, position, picked_on)
+                VALUES (:round, :film, NULL, :pos, :picked)
                 ON CONFLICT (round_number, film_slug) DO UPDATE
                     SET position = excluded.position
             SQL);
@@ -63,6 +64,7 @@ final readonly class RoundRepository
             'round' => $round,
             'film' => $filmSlug,
             'pos' => $position,
+            'picked' => $pickedOn,
         ]);
     }
 

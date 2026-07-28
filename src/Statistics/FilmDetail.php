@@ -15,6 +15,7 @@ final readonly class FilmDetail
         public string $title,
         public ?int $round,
         public ?string $pickedBy,
+        public ?string $pickedOn,
         public ?float $average,
         public ?int $spread,
         public array $ratings,

@@ -88,8 +88,8 @@ final class MessagesTest extends IntegrationTestCase
         $this->givenRound(2);
         $this->givenFilmRatedBy('low', ['wollkey' => 4, 'lenka' => 6]);
         $this->givenFilmRatedBy('high', ['wollkey' => 9, 'lenka' => 9]);
-        $this->rounds->addFilm(2, 'low', 'wollkey', 1);
-        $this->rounds->addFilm(2, 'high', 'lenka', 2);
+        $this->rounds->addFilm(2, 'low', 'wollkey', 1, '2025-06-30');
+        $this->rounds->addFilm(2, 'high', 'lenka', 2, '2025-07-07');
 
         $post = $this->messages()->currentRoundStandings();
 

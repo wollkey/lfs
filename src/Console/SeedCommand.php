@@ -92,6 +92,7 @@ final class SeedCommand extends Command
         $round = 1;
         $positionInRound = 0;
         $roundCapacity = self::FIRST_ROUND_SIZE;
+        $today = date('Y-m-d');
 
         foreach ($films as $film) {
             if ($positionInRound === $roundCapacity) {
@@ -102,7 +103,7 @@ final class SeedCommand extends Command
             ++$positionInRound;
 
             $this->rounds->ensure($round);
-            $this->rounds->syncFilm($round, $film->slug, $positionInRound);
+            $this->rounds->syncFilm($round, $film->slug, $positionInRound, $today);
         }
     }
 

@@ -82,7 +82,7 @@ final class PostRoundStandingsCommandTest extends IntegrationTestCase
         $this->givenMembers('wollkey', 'lenka');
         $this->givenRound(1);
         $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8]);
-        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1);
+        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1, '2025-01-06');
     }
 
     private function command(RecordingTelegramClient $client, Rasterizer $rasterizer): PostRoundStandingsCommand

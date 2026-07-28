@@ -198,7 +198,7 @@ final readonly class Statistics
     public function films(bool $withRatings = false): array
     {
         $filmRows = $this->pdo->query(<<<SQL
-                SELECT f.slug, f.title, rf.round_number, rf.picked_by, rf.position,
+                SELECT f.slug, f.title, rf.round_number, rf.picked_by, rf.position, rf.picked_on,
                        AVG(r.score) AS average, COUNT(r.score) AS votes
                 FROM films f
                 LEFT JOIN round_films rf ON rf.film_slug = f.slug
@@ -218,6 +218,7 @@ final readonly class Statistics
                 $f['round_number'] !== null ? (int) $f['round_number'] : null,
                 $f['picked_by'],
                 $f['position'] !== null ? (int) $f['position'] : null,
+                $f['picked_on'],
                 $withRatings ? ($ratingsBySlug[$f['slug']] ?? []) : null,
             ),
             $filmRows,
@@ -246,7 +247,7 @@ final readonly class Statistics
         }
 
         $scoreRows = $this->pdo->query(<<<SQL
-                SELECT rf.round_number, rf.position, f.slug, f.title, rf.picked_by, r.score
+                SELECT rf.round_number, rf.position, f.slug, f.title, rf.picked_by, rf.picked_on, r.score
                 FROM round_films rf
                 JOIN films f        ON f.slug      = rf.film_slug
                 LEFT JOIN ratings r ON r.film_slug = f.slug
@@ -254,7 +255,7 @@ final readonly class Statistics
             SQL)->fetchAll();
 
         /**
-         * @var array<int, array<string, array{title: string, pickedBy: ?string, position: int, scores: list<int>}>> $byRound
+         * @var array<int, array<string, array{title: string, pickedBy: ?string, pickedOn: ?string, position: int, scores: list<int>}>> $byRound
          */
         $byRound = [];
         foreach ($scoreRows as $row) {
@@ -263,6 +264,7 @@ final readonly class Statistics
 
             $byRound[$n][$slug]['title'] = $row['title'];
             $byRound[$n][$slug]['pickedBy'] = $row['picked_by'];
+            $byRound[$n][$slug]['pickedOn'] = $row['picked_on'];
             $byRound[$n][$slug]['position'] = (int) $row['position'];
             $byRound[$n][$slug]['scores'] ??= [];
 
@@ -291,6 +293,7 @@ final readonly class Statistics
                     $number,
                     $film['pickedBy'],
                     $film['position'],
+                    $film['pickedOn'],
                     null,
                 );
 
@@ -323,7 +326,7 @@ final readonly class Statistics
     public function filmDetail(string $slug): ?FilmDetail
     {
         $header = $this->fetchOne(<<<SQL
-                SELECT f.slug, f.title, rf.round_number, rf.picked_by
+                SELECT f.slug, f.title, rf.round_number, rf.picked_by, rf.picked_on
                 FROM films f
                 LEFT JOIN round_films rf ON rf.film_slug = f.slug
                 WHERE f.slug = :slug
@@ -366,6 +369,7 @@ final readonly class Statistics
             $header['title'],
             $header['round_number'] !== null ? (int) $header['round_number'] : null,
             $header['picked_by'],
+            $header['picked_on'],
             $average,
             $spread,
             $ratings,
