@@ -14,7 +14,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'rounds:pick', description: 'Assign film pickers interactively for films that have none.')]
 final class AssignPickersCommand extends Command
 {
-    private const string SKIP = '— skip (external list / decide later)';
+    private const string EXTERNAL = '— mark as external (never ask again)';
+    private const string SKIP = '— skip for now (decide later)';
 
     public function __construct(
         private readonly MemberRepository $members,
@@ -39,8 +40,9 @@ final class AssignPickersCommand extends Command
             return Command::FAILURE;
         }
 
-        $choices = [...array_keys($usernameByLabel), self::SKIP];
+        $choices = [...array_keys($usernameByLabel), self::EXTERNAL, self::SKIP];
         $assigned = 0;
+        $external = 0;
         $currentRound = null;
 
         foreach ($films as $film) {
@@ -53,12 +55,18 @@ final class AssignPickersCommand extends Command
             if ($choice === self::SKIP) {
                 continue;
             }
+            if ($choice === self::EXTERNAL) {
+                $this->rounds->markExternal($film['round'], $film['slug']);
+                ++$external;
+
+                continue;
+            }
 
             $this->rounds->setPicker($film['round'], $film['slug'], $usernameByLabel[$choice]);
             ++$assigned;
         }
 
-        $io->success(sprintf('Assigned %d picker(s).', $assigned));
+        $io->success(sprintf('Assigned %d picker(s), marked %d external.', $assigned, $external));
 
         return Command::SUCCESS;
     }

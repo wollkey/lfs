@@ -77,6 +77,15 @@ final readonly class RoundRepository
         $stmt->execute(['user' => $username, 'round' => $round, 'film' => $filmSlug]);
     }
 
+    public function markExternal(int $round, string $filmSlug): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE round_films SET externally_sourced = 1 WHERE round_number = :round AND film_slug = :film',
+        );
+
+        $stmt->execute(['round' => $round, 'film' => $filmSlug]);
+    }
+
     /**
      * @return list<array{round: int, slug: string, title: string}>
      */
@@ -86,7 +95,7 @@ final readonly class RoundRepository
                 SELECT rf.round_number AS round, rf.film_slug AS slug, f.title AS title
                 FROM round_films rf
                 JOIN films f ON f.slug = rf.film_slug
-                WHERE rf.picked_by IS NULL
+                WHERE rf.picked_by IS NULL AND rf.externally_sourced = 0
             SQL;
 
         $params = [];
