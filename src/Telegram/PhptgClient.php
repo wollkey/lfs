@@ -9,6 +9,7 @@ use Phptg\BotApi\FailResult;
 use Phptg\BotApi\TelegramBotApi;
 use Phptg\BotApi\TelegramRuntimeException;
 use Phptg\BotApi\Type\InputFile;
+use Phptg\BotApi\Type\InputMediaPhoto;
 use Phptg\BotApi\Type\InputRichBlock;
 use Phptg\BotApi\Type\InputRichBlockList;
 use Phptg\BotApi\Type\InputRichBlockListItem;
@@ -50,6 +51,27 @@ final readonly class PhptgClient implements TelegramClient
 
         if ($result instanceof FailResult) {
             throw new ApiException($this->describe('sendPhoto', $result));
+        }
+    }
+
+    public function sendPhotoGroup(string $chatId, array $imagePaths, string $caption): void
+    {
+        $media = [];
+        foreach (array_values($imagePaths) as $index => $path) {
+            $media[] = new InputMediaPhoto(
+                media: new InputFile($path),
+                caption: $index === 0 ? $caption : null,
+            );
+        }
+
+        try {
+            $result = $this->api->sendMediaGroup(chatId: $chatId, media: $media);
+        } catch (TelegramRuntimeException $e) {
+            throw new ApiException('Telegram sendMediaGroup failed.', previous: $e);
+        }
+
+        if ($result instanceof FailResult) {
+            throw new ApiException($this->describe('sendMediaGroup', $result));
         }
     }
 

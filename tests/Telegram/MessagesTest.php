@@ -105,6 +105,57 @@ final class MessagesTest extends IntegrationTestCase
         self::assertSame('Круги ещё не начались.', $post->intro);
     }
 
+    public function testRoundSummaryBuildsAnAlbumOfCardsWithACaption(): void
+    {
+        $this->seedSummaryRound();
+
+        ['caption' => $caption, 'cards' => $cards] = $this->messages()->roundSummary(1);
+
+        self::assertCount(4, $cards);
+        self::assertStringContainsString('Круг 1', $caption);
+        self::assertNotSame([], $cards[0]->table->headers);
+        self::assertSame([], $cards[1]->table->headers);
+        self::assertSame([], $cards[2]->table->headers);
+        self::assertNotSame([], $cards[3]->table->headers);
+        self::assertSame(['Unity', 'Flop'], $this->column($cards[0]->table->rows, 1));
+    }
+
+    public function testRoundSummaryCaptionLeadsWithTheBestFilm(): void
+    {
+        $this->seedSummaryRound();
+
+        $caption = $this->messages()->roundSummary(1)['caption'];
+
+        self::assertStringContainsString('Лучший фильм: Unity', $caption);
+    }
+
+    public function testRoundSummaryRendersTiesAsCommaSeparatedNames(): void
+    {
+        $this->seedSummaryRound();
+
+        $memberAwards = $this->messages()->roundSummary(1)['cards'][2];
+
+        self::assertSame('Anna, Boris', $memberAwards->table->rows[0][1]->text);
+    }
+
+    public function testRoundSummaryFallsBackWhenTheRoundIsEmpty(): void
+    {
+        ['caption' => $caption, 'cards' => $cards] = $this->messages()->roundSummary(9);
+
+        self::assertSame([], $cards);
+        self::assertStringContainsString('ещё не собрал фильмов', $caption);
+    }
+
+    private function seedSummaryRound(): void
+    {
+        $this->givenMembers('anna', 'boris', 'clara');
+        $this->givenRound(1, '2025-01-06', '2025-03-10');
+        $this->givenFilmRatedBy('unity', ['anna' => 8, 'boris' => 8, 'clara' => 8]);
+        $this->givenFilmRatedBy('flop', ['anna' => 2, 'boris' => 2]);
+        $this->rounds->addFilm(1, 'unity', 'anna', 1, '2025-01-06');
+        $this->rounds->addFilm(1, 'flop', 'boris', 2, '2025-01-13');
+    }
+
     private function messages(): Messages
     {
         return new Messages($this->statistics(quorum: 1), 'https://lfs.wollkey.ru');

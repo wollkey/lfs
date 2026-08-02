@@ -11,6 +11,7 @@ use App\Console\FetchFixturesCommand;
 use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
 use App\Console\PostRoundStandingsCommand;
+use App\Console\PostRoundSummaryCommand;
 use App\Console\SeedCommand;
 use App\Console\SeedMembersCommand;
 use App\Console\SetWebhookCommand;
@@ -24,6 +25,8 @@ use App\Persistence\Migrator;
 use App\Persistence\RatingRepository;
 use App\Persistence\RoundRepository;
 use App\Statistics\Statistics;
+use App\Telegram\Card\CardChrome;
+use App\Telegram\Card\PanelsCard;
 use App\Telegram\Card\StandingsCard;
 use App\Telegram\Messages;
 use App\Telegram\PhptgClient;
@@ -55,6 +58,10 @@ $telegramClient = $telegramToken !== null
     ? new PhptgClient(new TelegramBotApi($telegramToken))
     : null;
 
+$standingsCard = new StandingsCard();
+$panelsCard = new PanelsCard();
+$rasterizer = new RsvgRasterizer(width: CardChrome::WIDTH * 2);
+
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedMembersCommand($members));
@@ -65,8 +72,17 @@ $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
 $app->addCommand(new PostRoundStandingsCommand(
     $messages,
-    new StandingsCard(),
-    new RsvgRasterizer(width: StandingsCard::WIDTH * 2),
+    $standingsCard,
+    $rasterizer,
+    $telegramClient,
+    $telegramChatId,
+));
+$app->addCommand(new PostRoundSummaryCommand(
+    $messages,
+    $stats,
+    $standingsCard,
+    $panelsCard,
+    $rasterizer,
     $telegramClient,
     $telegramChatId,
 ));

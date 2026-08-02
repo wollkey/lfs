@@ -246,68 +246,10 @@ final readonly class Statistics
             $roundAverage[(int) $row['round_number']] = round((float) $row['average'], 1);
         }
 
-        $scoreRows = $this->pdo->query(<<<SQL
-                SELECT rf.round_number, rf.position, f.slug, f.title, rf.picked_by, rf.picked_on, r.score
-                FROM round_films rf
-                JOIN films f        ON f.slug      = rf.film_slug
-                LEFT JOIN ratings r ON r.film_slug = f.slug
-                ORDER BY rf.round_number, rf.position
-            SQL)->fetchAll();
-
-        /**
-         * @var array<int, array<string, array{title: string, pickedBy: ?string, pickedOn: ?string, position: int, scores: list<int>}>> $byRound
-         */
-        $byRound = [];
-        foreach ($scoreRows as $row) {
-            $n = (int) $row['round_number'];
-            $slug = $row['slug'];
-
-            $byRound[$n][$slug]['title'] = $row['title'];
-            $byRound[$n][$slug]['pickedBy'] = $row['picked_by'];
-            $byRound[$n][$slug]['pickedOn'] = $row['picked_on'];
-            $byRound[$n][$slug]['position'] = (int) $row['position'];
-            $byRound[$n][$slug]['scores'] ??= [];
-
-            if ($row['score'] !== null) {
-                $byRound[$n][$slug]['scores'][] = (int) $row['score'];
-            }
-        }
-
         $rounds = [];
         foreach ($roundRows as $r) {
             $number = (int) $r['number'];
-            $filmsInRound = $byRound[$number] ?? [];
-
-            $films = [];
-            $qualified = [];
-
-            foreach ($filmsInRound as $slug => $film) {
-                $scores = $film['scores'];
-                $average = $scores === [] ? null : round(array_sum($scores) / count($scores), 1);
-
-                $films[] = new ListedFilm(
-                    $slug,
-                    $film['title'],
-                    $average,
-                    count($scores),
-                    $number,
-                    $film['pickedBy'],
-                    $film['position'],
-                    $film['pickedOn'],
-                    null,
-                );
-
-                if (count($scores) >= $this->quorum) {
-                    $qualified[] = new RatedFilm(
-                        $slug,
-                        $film['title'],
-                        (float) $average,
-                        count($scores),
-                        max($scores) - min($scores),
-                        $this->populationStdDev($scores),
-                    );
-                }
-            }
+            ['films' => $films, 'qualified' => $qualified] = $this->filmsInRound($number);
 
             $rounds[] = new RoundView(
                 $number,
@@ -321,6 +263,54 @@ final readonly class Statistics
         }
 
         return $rounds;
+    }
+
+    public function roundSummary(int $round): ?RoundSummary
+    {
+        ['films' => $films, 'qualified' => $qualified] = $this->filmsInRound($round);
+
+        if ($films === []) {
+            return null;
+        }
+
+        usort(
+            $films,
+            static fn (ListedFilm $a, ListedFilm $b): int => ($b->average ?? -1.0) <=> ($a->average ?? -1.0),
+        );
+
+        $meta = $this->fetchOne('SELECT started_on, ended_on FROM rounds WHERE number = :round', ['round' => $round]);
+
+        $average = $this->fetchOne(<<<SQL
+                SELECT AVG(r.score) AS average
+                FROM round_films rf
+                JOIN ratings r ON r.film_slug = rf.film_slug
+                WHERE rf.round_number = :round
+            SQL, ['round' => $round]);
+
+        $activity = $this->roundActivity($round);
+        $reviewed = array_filter($activity, static fn (MemberActivity $a) => $a->reviews > 0);
+
+        return new RoundSummary(
+            $round,
+            $meta['started_on'] ?? null,
+            $meta['ended_on'] ?? null,
+            count($films),
+            array_sum(array_map(static fn (MemberActivity $a) => $a->ratings, $activity)),
+            array_sum(array_map(static fn (MemberActivity $a) => $a->reviews, $activity)),
+            $average !== null && $average['average'] !== null ? round((float) $average['average'], 1) : null,
+            $films,
+            $this->topFilms($qualified, static fn (RatedFilm $f) => $f->average, true),
+            $this->topFilms($qualified, static fn (RatedFilm $f) => $f->average, false),
+            $this->topFilms($qualified, static fn (RatedFilm $f) => $f->stdDev, true),
+            $this->topFilms($qualified, static fn (RatedFilm $f) => $f->stdDev, false),
+            $activity,
+            $this->topActivity($activity, static fn (MemberActivity $a) => (float) $a->ratings, true),
+            $this->topActivity($reviewed, static fn (MemberActivity $a) => (float) $a->reviews, true),
+            $this->topActivity($activity, static fn (MemberActivity $a) => $a->average ?? 0.0, true),
+            $this->topActivity($activity, static fn (MemberActivity $a) => $a->average ?? 0.0, false),
+            $this->roundBestPicks($round),
+            $this->roundHotTakes($round),
+        );
     }
 
     public function filmDetail(string $slug): ?FilmDetail
@@ -417,6 +407,69 @@ final readonly class Statistics
         }
 
         return $films;
+    }
+
+    /**
+     * @return array{films: ListedFilm[], qualified: RatedFilm[]}
+     */
+    private function filmsInRound(int $round): array
+    {
+        $rows = $this->fetchAll(<<<SQL
+                SELECT rf.position, f.slug, f.title, rf.picked_by, rf.picked_on, r.score
+                FROM round_films rf
+                JOIN films f        ON f.slug      = rf.film_slug
+                LEFT JOIN ratings r ON r.film_slug = f.slug
+                WHERE rf.round_number = :round
+                ORDER BY rf.position
+            SQL, ['round' => $round]);
+
+        /** @var array<string, array{title: string, pickedBy: ?string, pickedOn: ?string, position: int, scores: list<int>}> $byFilm */
+        $byFilm = [];
+        foreach ($rows as $row) {
+            $slug = $row['slug'];
+
+            $byFilm[$slug]['title'] = $row['title'];
+            $byFilm[$slug]['pickedBy'] = $row['picked_by'];
+            $byFilm[$slug]['pickedOn'] = $row['picked_on'];
+            $byFilm[$slug]['position'] = (int) $row['position'];
+            $byFilm[$slug]['scores'] ??= [];
+
+            if ($row['score'] !== null) {
+                $byFilm[$slug]['scores'][] = (int) $row['score'];
+            }
+        }
+
+        $films = [];
+        $qualified = [];
+        foreach ($byFilm as $slug => $film) {
+            $scores = $film['scores'];
+            $average = $scores === [] ? null : round(array_sum($scores) / count($scores), 1);
+
+            $films[] = new ListedFilm(
+                $slug,
+                $film['title'],
+                $average,
+                count($scores),
+                $round,
+                $film['pickedBy'],
+                $film['position'],
+                $film['pickedOn'],
+                null,
+            );
+
+            if (count($scores) >= $this->quorum) {
+                $qualified[] = new RatedFilm(
+                    $slug,
+                    $film['title'],
+                    (float) $average,
+                    count($scores),
+                    max($scores) - min($scores),
+                    $this->populationStdDev($scores),
+                );
+            }
+        }
+
+        return ['films' => $films, 'qualified' => $qualified];
     }
 
     /**
@@ -520,6 +573,132 @@ final readonly class Statistics
         $target = max($values);
 
         return array_values(array_filter($members, static fn (MemberStats $m) => $metric($m) === $target));
+    }
+
+    /**
+     * @return MemberActivity[]
+     */
+    private function roundActivity(int $round): array
+    {
+        $rows = $this->fetchAll(<<<SQL
+                SELECT m.username, m.display_name,
+                       COUNT(r.score) AS ratings,
+                       SUM(CASE WHEN r.review IS NOT NULL AND r.review <> '' THEN 1 ELSE 0 END) AS reviews,
+                       AVG(r.score) AS average
+                FROM ratings r
+                JOIN round_films rf ON rf.film_slug = r.film_slug AND rf.round_number = :round
+                JOIN members m      ON m.username   = r.member_username
+                GROUP BY m.username
+                ORDER BY ratings DESC, reviews DESC, m.display_name
+            SQL, ['round' => $round]);
+
+        return array_map(
+            static fn (array $r) => new MemberActivity(
+                $r['username'],
+                $r['display_name'],
+                (int) $r['ratings'],
+                (int) $r['reviews'],
+                $r['average'] !== null ? round((float) $r['average'], 1) : null,
+            ),
+            $rows,
+        );
+    }
+
+    /**
+     * @param MemberActivity[]                $activity
+     * @param callable(MemberActivity): float $metric
+     *
+     * @return MemberActivity[]
+     */
+    private function topActivity(array $activity, callable $metric, bool $highest): array
+    {
+        if ($activity === []) {
+            return [];
+        }
+
+        $values = array_map($metric, $activity);
+        $target = $highest ? max($values) : min($values);
+
+        return array_values(array_filter($activity, static fn (MemberActivity $a) => $metric($a) === $target));
+    }
+
+    /**
+     * @return RoundPick[]
+     */
+    private function roundBestPicks(int $round): array
+    {
+        $rows = $this->fetchAll(<<<SQL
+                SELECT m.display_name, f.title, AVG(r.score) AS film_average
+                FROM round_films rf
+                JOIN films f   ON f.slug     = rf.film_slug
+                JOIN members m ON m.username = rf.picked_by
+                JOIN ratings r ON r.film_slug = rf.film_slug
+                WHERE rf.picked_by IS NOT NULL AND rf.round_number = :round
+                GROUP BY rf.film_slug
+                HAVING COUNT(r.score) >= {$this->quorum}
+            SQL, ['round' => $round]);
+
+        $picks = array_map(
+            static fn (array $r) => new RoundPick(
+                $r['display_name'],
+                $r['title'],
+                round((float) $r['film_average'], 1),
+            ),
+            $rows,
+        );
+
+        if ($picks === []) {
+            return [];
+        }
+
+        $target = max(array_map(static fn (RoundPick $p) => $p->average, $picks));
+
+        return array_values(array_filter($picks, static fn (RoundPick $p) => $p->average === $target));
+    }
+
+    /**
+     * @return HotTake[]
+     */
+    private function roundHotTakes(int $round): array
+    {
+        $rows = $this->fetchAll(<<<SQL
+                SELECT m.display_name, f.title, r.score, avgs.average AS film_average
+                FROM ratings r
+                JOIN round_films rf ON rf.film_slug = r.film_slug AND rf.round_number = :round
+                JOIN films f        ON f.slug       = r.film_slug
+                JOIN members m      ON m.username   = r.member_username
+                JOIN (
+                    SELECT r2.film_slug, AVG(r2.score) AS average, COUNT(r2.score) AS votes
+                    FROM ratings r2
+                    JOIN round_films rf2 ON rf2.film_slug = r2.film_slug AND rf2.round_number = :innerRound
+                    GROUP BY r2.film_slug
+                ) avgs ON avgs.film_slug = r.film_slug
+                WHERE avgs.votes >= {$this->quorum}
+                ORDER BY m.display_name
+            SQL, ['round' => $round, 'innerRound' => $round]);
+
+        $takes = array_map(
+            static fn (array $r) => new HotTake(
+                $r['display_name'],
+                $r['title'],
+                (int) $r['score'],
+                round((float) $r['film_average'], 1),
+            ),
+            $rows,
+        );
+
+        if ($takes === []) {
+            return [];
+        }
+
+        $deviation = static fn (HotTake $t): float => abs($t->score - $t->filmAverage);
+        $target = max(array_map($deviation, $takes));
+
+        if ($target <= 0.0) {
+            return [];
+        }
+
+        return array_values(array_filter($takes, static fn (HotTake $t) => $deviation($t) === $target));
     }
 
     /**
