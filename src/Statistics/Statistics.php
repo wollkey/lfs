@@ -210,19 +210,28 @@ final readonly class Statistics
         $ratingsBySlug = $withRatings ? $this->allRatingsGrouped() : [];
 
         return array_map(
-            fn (array $f) => new ListedFilm(
-                $f['slug'],
-                $f['title'],
-                $f['average'] !== null ? round((float) $f['average'], 1) : null,
-                (int) $f['votes'],
-                $f['round_number'] !== null ? (int) $f['round_number'] : null,
-                $f['picked_by'],
-                $f['position'] !== null ? (int) $f['position'] : null,
-                $f['picked_on'],
-                $withRatings ? ($ratingsBySlug[$f['slug']] ?? []) : null,
-            ),
+            fn (array $f): ListedFilm => $this->toListedFilm($f, $withRatings ? ($ratingsBySlug[$f['slug']] ?? []) : null),
             $filmRows,
         );
+    }
+
+    /**
+     * @return ListedFilm[]
+     */
+    public function filmsPickedBetween(string $from, string $to): array
+    {
+        $rows = $this->fetchAll(<<<SQL
+                SELECT f.slug, f.title, rf.round_number, rf.picked_by, rf.position, rf.picked_on,
+                       AVG(r.score) AS average, COUNT(r.score) AS votes
+                FROM round_films rf
+                JOIN films f        ON f.slug = rf.film_slug
+                LEFT JOIN ratings r ON r.film_slug = f.slug
+                WHERE rf.picked_on BETWEEN :from AND :to
+                GROUP BY f.slug
+                ORDER BY rf.picked_on
+            SQL, ['from' => $from, 'to' => $to]);
+
+        return array_map(fn (array $f): ListedFilm => $this->toListedFilm($f), $rows);
     }
 
     /**
@@ -364,6 +373,45 @@ final readonly class Statistics
             $spread,
             $ratings,
             $notWatched,
+        );
+    }
+
+    /**
+     * The most recently watched film (by picked_on) that reached quorum, with its
+     * full rating breakdown. Spans all rounds so it bridges the gap between rounds.
+     */
+    public function latestRatedFilm(): ?FilmDetail
+    {
+        $latest = null;
+        foreach ($this->films() as $film) {
+            if ($film->votes < $this->quorum || $film->pickedOn === null) {
+                continue;
+            }
+
+            if ($latest === null || $film->pickedOn > $latest->pickedOn) {
+                $latest = $film;
+            }
+        }
+
+        return $latest === null ? null : $this->filmDetail($latest->slug);
+    }
+
+    /**
+     * @param array<string,mixed> $f
+     * @param MemberScore[]|null  $ratings
+     */
+    private function toListedFilm(array $f, ?array $ratings = null): ListedFilm
+    {
+        return new ListedFilm(
+            $f['slug'],
+            $f['title'],
+            $f['average'] !== null ? round((float) $f['average'], 1) : null,
+            (int) $f['votes'],
+            $f['round_number'] !== null ? (int) $f['round_number'] : null,
+            $f['picked_by'],
+            $f['position'] !== null ? (int) $f['position'] : null,
+            $f['picked_on'],
+            $ratings,
         );
     }
 

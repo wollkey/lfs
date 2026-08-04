@@ -10,6 +10,8 @@ use App\Console\AssignPickersCommand;
 use App\Console\FetchFixturesCommand;
 use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
+use App\Console\PostFlashbackCommand;
+use App\Console\PostHighlightCommand;
 use App\Console\PostRoundStandingsCommand;
 use App\Console\PostRoundSummaryCommand;
 use App\Console\SeedCommand;
@@ -29,6 +31,7 @@ use App\Telegram\Card\CardChrome;
 use App\Telegram\Card\PanelsCard;
 use App\Telegram\Card\StandingsCard;
 use App\Telegram\Messages;
+use App\Telegram\MicroPoster;
 use App\Telegram\PhptgClient;
 use App\Telegram\RsvgRasterizer;
 use Phptg\BotApi\TelegramBotApi;
@@ -61,6 +64,7 @@ $telegramClient = $telegramToken !== null
 $standingsCard = new StandingsCard();
 $panelsCard = new PanelsCard();
 $rasterizer = new RsvgRasterizer(width: CardChrome::WIDTH * 2);
+$microPoster = new MicroPoster($panelsCard, $rasterizer, $telegramClient, $telegramChatId);
 
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
@@ -86,6 +90,8 @@ $app->addCommand(new PostRoundSummaryCommand(
     $telegramClient,
     $telegramChatId,
 ));
+$app->addCommand(new PostFlashbackCommand($messages, $microPoster));
+$app->addCommand(new PostHighlightCommand($messages, $microPoster));
 $app->addCommand(new SetWebhookCommand($telegramClient, $telegramSecret));
 
 $app->run();

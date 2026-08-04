@@ -14,6 +14,39 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(Statistics::class)]
 final class StatisticsTest extends IntegrationTestCase
 {
+    public function testFilmsPickedBetweenReturnsFilmsWithinTheInclusiveWindow(): void
+    {
+        $this->givenMembers('anna');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('before', ['anna' => 5]);
+        $this->givenFilmRatedBy('start', ['anna' => 6]);
+        $this->givenFilmRatedBy('end', ['anna' => 7]);
+        $this->givenFilmRatedBy('after', ['anna' => 8]);
+        $this->rounds->addFilm(1, 'before', 'anna', 1, '2025-08-03');
+        $this->rounds->addFilm(1, 'start', 'anna', 2, '2025-08-04');
+        $this->rounds->addFilm(1, 'end', 'anna', 3, '2025-08-10');
+        $this->rounds->addFilm(1, 'after', 'anna', 4, '2025-08-11');
+
+        $films = $this->statistics(quorum: 1)->filmsPickedBetween('2025-08-04', '2025-08-10');
+
+        $titles = array_map(static fn (ListedFilm $f): string => $f->title, $films);
+        self::assertSame(['Start', 'End'], $titles);
+    }
+
+    public function testLatestRatedFilmPicksTheNewestFilmThatReachedQuorum(): void
+    {
+        $this->givenMembers('anna', 'boris');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('qualified', ['anna' => 6, 'boris' => 8]);
+        $this->givenFilmRatedBy('newest', ['anna' => 7]);
+        $this->rounds->addFilm(1, 'qualified', 'anna', 1, '2026-02-02');
+        $this->rounds->addFilm(1, 'newest', 'boris', 2, '2026-02-09');
+
+        $film = $this->statistics(quorum: 2)->latestRatedFilm();
+
+        self::assertSame('qualified', $film?->slug);
+    }
+
     public function testBestFilmIgnoresFilmsBelowQuorum(): void
     {
         $this->givenMembers('wollkey', 'lenka', 'vika');

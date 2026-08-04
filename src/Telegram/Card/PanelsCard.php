@@ -17,27 +17,29 @@ final readonly class PanelsCard
     ) {
     }
 
-    public function render(Post $post): string
+    public function render(Post $post, string $tagline = 'LAST FRAME SOCIETY · ИТОГИ КРУГА', ?string $accent = null): string
     {
+        $chrome = $accent === null ? $this->chrome : new CardChrome($accent);
+
         $rows = $post->table !== null ? $post->table->rows : [];
         $top = $post->intro !== null ? 300 : 256;
         $height = $top + count($rows) * self::PANEL_STRIDE + 48;
 
         $parts = [
-            $this->chrome->open($height),
-            $this->chrome->header($post->title),
+            $chrome->open($height),
+            $chrome->header($post->title),
         ];
 
         if ($post->intro !== null) {
-            $parts[] = $this->chrome->text(CardChrome::WIDTH / 2, 244, 26, CardChrome::MUTED, 'middle', CardChrome::OSWALD, 400, $post->intro, 'letter-spacing="1"');
+            $parts[] = $chrome->text(CardChrome::WIDTH / 2, 244, 26, CardChrome::MUTED, 'middle', CardChrome::OSWALD, 400, $post->intro, 'letter-spacing="1"');
         }
 
         foreach ($rows as $index => $row) {
             $parts[] = $this->panel($index, $row, $top);
         }
 
-        $parts[] = $this->chrome->footer($height, 'LAST FRAME SOCIETY · ИТОГИ КРУГА');
-        $parts[] = $this->chrome->close();
+        $parts[] = $chrome->footer($height, $tagline);
+        $parts[] = $chrome->close();
 
         return implode("\n", $parts);
     }

@@ -146,6 +146,78 @@ final class MessagesTest extends IntegrationTestCase
         self::assertStringContainsString('ещё не собрал фильмов', $caption);
     }
 
+    public function testFlashbackSurfacesFilmsPickedAYearAgoThisWeek(): void
+    {
+        $this->givenMembers('anna', 'boris');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('oldie', ['anna' => 8, 'boris' => 7]);
+        $this->rounds->addFilm(1, 'oldie', 'anna', 1, '2025-08-04');
+
+        $post = $this->messages()->flashback(new \DateTimeImmutable('2026-08-06'));
+
+        self::assertNotNull($post);
+        self::assertStringContainsString('Год назад', $post->title);
+        self::assertSame(['Oldie'], $this->column($post->table->rows, 1));
+    }
+
+    public function testFlashbackReturnsNullWhenNothingWatchedThatWeek(): void
+    {
+        $this->givenMembers('anna');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('oldie', ['anna' => 8]);
+        $this->rounds->addFilm(1, 'oldie', 'anna', 1, '2025-08-04');
+
+        self::assertNull($this->messages()->flashback(new \DateTimeImmutable('2026-12-01')));
+    }
+
+    public function testWeeklyHighlightSpotlightsTheLatestRatedFilm(): void
+    {
+        $this->givenMembers('anna', 'boris', 'clara');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('older', ['anna' => 5, 'boris' => 6]);
+        $this->givenFilmRatedBy('newer', ['anna' => 3, 'boris' => 9, 'clara' => 6]);
+        $this->rounds->addFilm(1, 'older', 'anna', 1, '2026-01-06');
+        $this->rounds->addFilm(1, 'newer', 'boris', 2, '2026-01-13');
+
+        $post = $this->messages()->weeklyHighlight();
+
+        self::assertNotNull($post);
+        self::assertStringContainsString('Последний просмотр', $post->title);
+        self::assertSame(['Newer', 'Boris', 'Anna'], $this->column($post->table->rows, 1));
+    }
+
+    public function testWeeklyHighlightListsAllTiedTopAndBottomVoters(): void
+    {
+        $this->givenMembers('anna', 'boris', 'clara', 'dima');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('film', ['anna' => 9, 'boris' => 9, 'clara' => 4, 'dima' => 4]);
+        $this->rounds->addFilm(1, 'film', 'anna', 1, '2026-03-02');
+
+        $post = $this->messages()->weeklyHighlight();
+
+        self::assertNotNull($post);
+        self::assertSame(['Film', 'Anna, Boris', 'Clara, Dima'], $this->column($post->table->rows, 1));
+    }
+
+    public function testWeeklyHighlightCollapsesToUnanimousWhenEveryoneAgrees(): void
+    {
+        $this->givenMembers('anna', 'boris');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('film', ['anna' => 8, 'boris' => 8]);
+        $this->rounds->addFilm(1, 'film', 'anna', 1, '2026-03-02');
+
+        $post = $this->messages()->weeklyHighlight();
+
+        self::assertNotNull($post);
+        self::assertCount(2, $post->table->rows);
+        self::assertSame('Единогласно', $post->table->rows[1][0]->text);
+    }
+
+    public function testWeeklyHighlightReturnsNullWithoutAQualifiedFilm(): void
+    {
+        self::assertNull($this->messages()->weeklyHighlight());
+    }
+
     private function seedSummaryRound(): void
     {
         $this->givenMembers('anna', 'boris', 'clara');

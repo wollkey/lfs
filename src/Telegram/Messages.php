@@ -8,6 +8,7 @@ use App\Domain\MemberStatus;
 use App\Statistics\HotTake;
 use App\Statistics\ListedFilm;
 use App\Statistics\MemberActivity;
+use App\Statistics\MemberScore;
 use App\Statistics\MemberStats;
 use App\Statistics\RatedFilm;
 use App\Statistics\RoundPick;
@@ -114,6 +115,50 @@ final readonly class Messages
         return new Post($title, new Table(['№', 'Фильм', 'Рейтинг', 'Оценок'], $rows));
     }
 
+    public function flashback(?\DateTimeImmutable $now = null): ?Post
+    {
+        $weekAgo = ($now ?? new \DateTimeImmutable())->modify('-1 year')->modify('monday this week');
+
+        $films = $this->stats->filmsPickedBetween(
+            $weekAgo->format('Y-m-d'),
+            $weekAgo->modify('+6 days')->format('Y-m-d'),
+        );
+
+        if ($films === []) {
+            return null;
+        }
+
+        $rows = [];
+        foreach ($films as $film) {
+            $rows[] = $this->panel('Смотрели', $film->title, $this->rating($film->average));
+        }
+
+        return new Post('🕰 Год назад в этот день', new Table([], $rows));
+    }
+
+    public function weeklyHighlight(): ?Post
+    {
+        $film = $this->stats->latestRatedFilm();
+        if ($film === null || $film->ratings === []) {
+            return null;
+        }
+
+        $scores = array_map(static fn (MemberScore $r): int => $r->score, $film->ratings);
+        $max = max($scores);
+        $min = min($scores);
+
+        $rows = [$this->panel('Фильм', $film->title, $this->rating($film->average))];
+
+        if ($max === $min) {
+            $rows[] = $this->panel('Единогласно', $this->scorers($film->ratings, $max), (string) $max);
+        } else {
+            $rows[] = $this->panel('Выше всех', $this->scorers($film->ratings, $max), (string) $max);
+            $rows[] = $this->panel('Ниже всех', $this->scorers($film->ratings, $min), (string) $min);
+        }
+
+        return new Post('🎬 Последний просмотр', new Table([], $rows));
+    }
+
     /**
      * @return array{caption: string, cards: Post[]}
      */
@@ -134,6 +179,21 @@ final readonly class Messages
                 $this->roundActivity($summary),
             ],
         ];
+    }
+
+    /**
+     * @param MemberScore[] $ratings
+     */
+    private function scorers(array $ratings, int $score): string
+    {
+        $names = [];
+        foreach ($ratings as $rating) {
+            if ($rating->score === $score) {
+                $names[] = $rating->displayName;
+            }
+        }
+
+        return implode(', ', $names);
     }
 
     private function roundCaption(RoundSummary $s): string
