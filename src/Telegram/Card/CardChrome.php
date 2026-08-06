@@ -19,11 +19,6 @@ final readonly class CardChrome
     public const string BEBAS = 'Bebas Neue';
     public const string OSWALD = 'Oswald';
 
-    public function __construct(
-        private string $accent = self::ACCENT,
-    ) {
-    }
-
     public function open(int $height): string
     {
         return implode("\n", [
@@ -108,8 +103,8 @@ final readonly class CardChrome
             .'<stop offset="0" stop-color="#f2d3a0"/><stop offset="1" stop-color="'.self::ACCENT.'"/>'
             .'</linearGradient>'
             .'<radialGradient id="glow" cx="0.85" cy="0.12" r="0.5">'
-            .'<stop offset="0" stop-color="'.$this->accent.'" stop-opacity="0.12"/>'
-            .'<stop offset="1" stop-color="'.$this->accent.'" stop-opacity="0"/>'
+            .'<stop offset="0" stop-color="'.self::ACCENT.'" stop-opacity="0.12"/>'
+            .'<stop offset="1" stop-color="'.self::ACCENT.'" stop-opacity="0"/>'
             .'</radialGradient>'
             .'</defs>';
     }

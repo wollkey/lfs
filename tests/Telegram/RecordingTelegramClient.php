@@ -44,7 +44,7 @@ final class RecordingTelegramClient implements TelegramClient
         $this->sent[] = ['chatId' => $chatId, 'post' => $post];
     }
 
-    public function sendPhoto(string $chatId, string $imagePath, string $caption): void
+    public function sendPhoto(string $chatId, string $imagePath, string $caption, bool $html = false): void
     {
         if ($this->fail) {
             throw new ApiException('simulated failure');
@@ -53,7 +53,7 @@ final class RecordingTelegramClient implements TelegramClient
         $this->photos[] = ['chatId' => $chatId, 'imagePath' => $imagePath, 'caption' => $caption];
     }
 
-    public function sendPhotoGroup(string $chatId, array $imagePaths, string $caption): void
+    public function sendPhotoGroup(string $chatId, array $imagePaths, string $caption, bool $html = false): void
     {
         if ($this->fail) {
             throw new ApiException('simulated failure');

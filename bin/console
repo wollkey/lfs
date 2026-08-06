@@ -51,7 +51,7 @@ $activityParser = new ActivityParser();
 
 $stats = new Statistics($pdo);
 $siteUrl = getenv('LFS_SITE_URL') ?: 'https://lfs.wollkey.ru';
-$messages = new Messages($stats, $siteUrl);
+$messages = new Messages($stats, $siteUrl, __DIR__ . '/../public/posters');
 
 $telegramToken = getenv('TELEGRAM_BOT_TOKEN') ?: null;
 $telegramSecret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: null;
@@ -64,7 +64,7 @@ $telegramClient = $telegramToken !== null
 $standingsCard = new StandingsCard();
 $panelsCard = new PanelsCard();
 $rasterizer = new RsvgRasterizer(width: CardChrome::WIDTH * 2);
-$microPoster = new MicroPoster($panelsCard, $rasterizer, $telegramClient, $telegramChatId);
+$microPoster = new MicroPoster($telegramClient, $telegramChatId);
 
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));

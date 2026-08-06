@@ -26,13 +26,6 @@ final class PostHighlightCommand extends Command
         #[Option(description: 'Write the card to var/ instead of posting it.')]
         bool $dryRun = false,
     ): int {
-        return $this->poster->post(
-            $io,
-            $this->messages->weeklyHighlight(),
-            'LAST FRAME SOCIETY · ПОСЛЕДНИЙ ПРОСМОТР',
-            '#79b58a',
-            'highlight',
-            $dryRun,
-        );
+        return $this->poster->post($io, $this->messages->weeklyHighlight(), $dryRun);
     }
 }

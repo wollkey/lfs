@@ -156,8 +156,9 @@ final class MessagesTest extends IntegrationTestCase
         $post = $this->messages()->flashback(new \DateTimeImmutable('2026-08-06'));
 
         self::assertNotNull($post);
-        self::assertStringContainsString('Год назад', $post->title);
-        self::assertSame(['Oldie'], $this->column($post->table->rows, 1));
+        self::assertSame(['/posters/oldie.jpg'], $post->images);
+        self::assertStringContainsString('Год назад в этот день', (string) $post->intro);
+        self::assertStringContainsString('<b>Oldie</b> - 7.5 (2 оценок)', (string) $post->intro);
     }
 
     public function testFlashbackReturnsNullWhenNothingWatchedThatWeek(): void
@@ -182,8 +183,11 @@ final class MessagesTest extends IntegrationTestCase
         $post = $this->messages()->weeklyHighlight();
 
         self::assertNotNull($post);
-        self::assertStringContainsString('Последний просмотр', $post->title);
-        self::assertSame(['Newer', 'Boris', 'Anna'], $this->column($post->table->rows, 1));
+        self::assertSame(['/posters/newer.jpg'], $post->images);
+        self::assertStringContainsString('Последний кадр', (string) $post->intro);
+        self::assertStringContainsString('<b>Newer</b>', (string) $post->intro);
+        self::assertStringContainsString('Самая высокая: Boris (9)', (string) $post->intro);
+        self::assertStringContainsString('Самая низкая: Anna (3)', (string) $post->intro);
     }
 
     public function testWeeklyHighlightListsAllTiedTopAndBottomVoters(): void
@@ -196,7 +200,8 @@ final class MessagesTest extends IntegrationTestCase
         $post = $this->messages()->weeklyHighlight();
 
         self::assertNotNull($post);
-        self::assertSame(['Film', 'Anna, Boris', 'Clara, Dima'], $this->column($post->table->rows, 1));
+        self::assertStringContainsString('Самая высокая: Anna, Boris (9)', (string) $post->intro);
+        self::assertStringContainsString('Самая низкая: Clara, Dima (4)', (string) $post->intro);
     }
 
     public function testWeeklyHighlightCollapsesToUnanimousWhenEveryoneAgrees(): void
@@ -209,8 +214,7 @@ final class MessagesTest extends IntegrationTestCase
         $post = $this->messages()->weeklyHighlight();
 
         self::assertNotNull($post);
-        self::assertCount(2, $post->table->rows);
-        self::assertSame('Единогласно', $post->table->rows[1][0]->text);
+        self::assertStringContainsString('Единогласно - 8', (string) $post->intro);
     }
 
     public function testWeeklyHighlightReturnsNullWithoutAQualifiedFilm(): void
@@ -230,7 +234,7 @@ final class MessagesTest extends IntegrationTestCase
 
     private function messages(): Messages
     {
-        return new Messages($this->statistics(quorum: 1), 'https://lfs.wollkey.ru');
+        return new Messages($this->statistics(quorum: 1), 'https://lfs.wollkey.ru', '/posters');
     }
 
     /**

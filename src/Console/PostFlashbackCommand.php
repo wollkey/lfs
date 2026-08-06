@@ -26,13 +26,6 @@ final class PostFlashbackCommand extends Command
         #[Option(description: 'Write the card to var/ instead of posting it.')]
         bool $dryRun = false,
     ): int {
-        return $this->poster->post(
-            $io,
-            $this->messages->flashback(),
-            'LAST FRAME SOCIETY · МАШИНА ВРЕМЕНИ',
-            '#6f9ad1',
-            'flashback',
-            $dryRun,
-        );
+        return $this->poster->post($io, $this->messages->flashback(), $dryRun);
     }
 }

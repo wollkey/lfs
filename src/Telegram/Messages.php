@@ -20,6 +20,7 @@ final readonly class Messages
     public function __construct(
         private Statistics $stats,
         private string $siteUrl,
+        private string $postersDir = 'public/posters',
     ) {
     }
 
@@ -128,12 +129,14 @@ final readonly class Messages
             return null;
         }
 
-        $rows = [];
+        $images = [];
+        $lines = ['<b>🕰 Год назад в этот день</b>', ''];
         foreach ($films as $film) {
-            $rows[] = $this->panel('Смотрели', $film->title, $this->rating($film->average));
+            $images[] = $this->poster($film->slug);
+            $lines[] = sprintf('<b>%s</b> - %s (%d оценок)', $this->esc($film->title), $this->rating($film->average), $film->votes);
         }
 
-        return new Post('🕰 Год назад в этот день', new Table([], $rows));
+        return new Post('🕰 Год назад в этот день', intro: implode("\n", $lines), images: $images);
     }
 
     public function weeklyHighlight(): ?Post
@@ -147,16 +150,20 @@ final readonly class Messages
         $max = max($scores);
         $min = min($scores);
 
-        $rows = [$this->panel('Фильм', $film->title, $this->rating($film->average))];
+        $lines = [
+            '<b>🎬 Последний кадр</b>',
+            '',
+            sprintf('<b>%s</b> - %s', $this->esc($film->title), $this->rating($film->average)),
+        ];
 
         if ($max === $min) {
-            $rows[] = $this->panel('Единогласно', $this->scorers($film->ratings, $max), (string) $max);
+            $lines[] = sprintf('Единогласно - %d', $max);
         } else {
-            $rows[] = $this->panel('Выше всех', $this->scorers($film->ratings, $max), (string) $max);
-            $rows[] = $this->panel('Ниже всех', $this->scorers($film->ratings, $min), (string) $min);
+            $lines[] = sprintf('Самая высокая: %s (%d)', $this->esc($this->scorers($film->ratings, $max)), $max);
+            $lines[] = sprintf('Самая низкая: %s (%d)', $this->esc($this->scorers($film->ratings, $min)), $min);
         }
 
-        return new Post('🎬 Последний просмотр', new Table([], $rows));
+        return new Post('🎬 Последний кадр', intro: implode("\n", $lines), images: [$this->poster($film->slug)]);
     }
 
     /**
@@ -194,6 +201,16 @@ final readonly class Messages
         }
 
         return implode(', ', $names);
+    }
+
+    private function poster(string $slug): string
+    {
+        return $this->postersDir.'/'.$slug.'.jpg';
+    }
+
+    private function esc(string $text): string
+    {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     }
 
     private function roundCaption(RoundSummary $s): string

@@ -16,14 +16,14 @@ interface TelegramClient
     /**
      * @throws ApiException
      */
-    public function sendPhoto(string $chatId, string $imagePath, string $caption): void;
+    public function sendPhoto(string $chatId, string $imagePath, string $caption, bool $html = false): void;
 
     /**
      * @param string[] $imagePaths
      *
      * @throws ApiException
      */
-    public function sendPhotoGroup(string $chatId, array $imagePaths, string $caption): void;
+    public function sendPhotoGroup(string $chatId, array $imagePaths, string $caption, bool $html = false): void;
 
     /**
      * @throws ApiException
