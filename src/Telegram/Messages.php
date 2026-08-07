@@ -133,7 +133,7 @@ final readonly class Messages
         $lines = ['<b>🕰 Год назад в этот день</b>', ''];
         foreach ($films as $film) {
             $images[] = $this->poster($film->slug);
-            $lines[] = sprintf('<b>%s</b> - %s (%d оценок)', $this->esc($film->title), $this->rating($film->average), $film->votes);
+            $lines[] = sprintf('<b><a href="%s">%s</a></b> - %s (%d оценок)', $this->filmUrl($film->slug), $this->esc($film->title), $this->rating($film->average), $film->votes);
         }
 
         return new Post('🕰 Год назад в этот день', intro: implode("\n", $lines), images: $images);
@@ -153,14 +153,14 @@ final readonly class Messages
         $lines = [
             '<b>🎬 Последний кадр</b>',
             '',
-            sprintf('<b>%s</b> - %s', $this->esc($film->title), $this->rating($film->average)),
+            sprintf('<b><a href="%s">%s</a></b> - %s', $this->filmUrl($film->slug), $this->esc($film->title), $this->rating($film->average)),
         ];
 
         if ($max === $min) {
             $lines[] = sprintf('Единогласно - %d', $max);
         } else {
-            $lines[] = sprintf('Самая высокая: %s (%d)', $this->esc($this->scorers($film->ratings, $max)), $max);
-            $lines[] = sprintf('Самая низкая: %s (%d)', $this->esc($this->scorers($film->ratings, $min)), $min);
+            $lines[] = sprintf('Высшая оценка: %s (%d)', $this->esc($this->scorers($film->ratings, $max)), $max);
+            $lines[] = sprintf('Низшая оценка: %s (%d)', $this->esc($this->scorers($film->ratings, $min)), $min);
         }
 
         return new Post('🎬 Последний кадр', intro: implode("\n", $lines), images: [$this->poster($film->slug)]);
@@ -206,6 +206,11 @@ final readonly class Messages
     private function poster(string $slug): string
     {
         return $this->postersDir.'/'.$slug.'.jpg';
+    }
+
+    private function filmUrl(string $slug): string
+    {
+        return $this->siteUrl.'/films/'.rawurlencode($slug);
     }
 
     private function esc(string $text): string

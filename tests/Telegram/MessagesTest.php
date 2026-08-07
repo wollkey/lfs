@@ -158,7 +158,7 @@ final class MessagesTest extends IntegrationTestCase
         self::assertNotNull($post);
         self::assertSame(['/posters/oldie.jpg'], $post->images);
         self::assertStringContainsString('Год назад в этот день', (string) $post->intro);
-        self::assertStringContainsString('<b>Oldie</b> - 7.5 (2 оценок)', (string) $post->intro);
+        self::assertStringContainsString('<b><a href="https://lfs.wollkey.ru/films/oldie">Oldie</a></b> - 7.5 (2 оценок)', (string) $post->intro);
     }
 
     public function testFlashbackReturnsNullWhenNothingWatchedThatWeek(): void
@@ -185,9 +185,9 @@ final class MessagesTest extends IntegrationTestCase
         self::assertNotNull($post);
         self::assertSame(['/posters/newer.jpg'], $post->images);
         self::assertStringContainsString('Последний кадр', (string) $post->intro);
-        self::assertStringContainsString('<b>Newer</b>', (string) $post->intro);
-        self::assertStringContainsString('Самая высокая: Boris (9)', (string) $post->intro);
-        self::assertStringContainsString('Самая низкая: Anna (3)', (string) $post->intro);
+        self::assertStringContainsString('<b><a href="https://lfs.wollkey.ru/films/newer">Newer</a></b>', (string) $post->intro);
+        self::assertStringContainsString('Высшая оценка: Boris (9)', (string) $post->intro);
+        self::assertStringContainsString('Низшая оценка: Anna (3)', (string) $post->intro);
     }
 
     public function testWeeklyHighlightListsAllTiedTopAndBottomVoters(): void
@@ -200,8 +200,8 @@ final class MessagesTest extends IntegrationTestCase
         $post = $this->messages()->weeklyHighlight();
 
         self::assertNotNull($post);
-        self::assertStringContainsString('Самая высокая: Anna, Boris (9)', (string) $post->intro);
-        self::assertStringContainsString('Самая низкая: Clara, Dima (4)', (string) $post->intro);
+        self::assertStringContainsString('Высшая оценка: Anna, Boris (9)', (string) $post->intro);
+        self::assertStringContainsString('Низшая оценка: Clara, Dima (4)', (string) $post->intro);
     }
 
     public function testWeeklyHighlightCollapsesToUnanimousWhenEveryoneAgrees(): void
