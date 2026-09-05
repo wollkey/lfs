@@ -27,7 +27,7 @@ abstract class IntegrationTestCase extends TestCase
 
     protected function setUp(): void
     {
-        $this->pdo = Connection::open(':memory:');                       // свежая БД на каждый тест
+        $this->pdo = Connection::open(':memory:');
         new Migrator($this->pdo, LFS_ROOT.'/migrations')->migrate();
 
         $this->members = new MemberRepository($this->pdo);

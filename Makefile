@@ -99,13 +99,6 @@ refresh-posters: ## Re-download every poster at full resolution
 	@$(CONSOLE) posters:fetch --force
 .PHONY: refresh-posters
 
-fresh: ## Recreate empty DB + seed roster (DROPS DATA)
-	@rm -f $(DB)
-	@$(MAKE) migrate
-	@$(MAKE) seed-members
-	@echo -e "$(GREEN)✓ Fresh database ready$(RESET)"
-.PHONY: fresh
-
 ##
 ## Data entry
 ## ----------
@@ -117,10 +110,6 @@ rate: ## Add a member's ratings interactively (film by title, score 1–10)
 pick: ## Assign film pickers interactively (films without a picker)
 	@$(CONSOLE_TTY) rounds:pick
 .PHONY: pick
-
-fetch-fixtures: ## DEV: scrape HTML (needs LBXD_USER/LBXD_PASS; may be blocked)
-	@$(CONSOLE) fixtures:fetch
-.PHONY: fetch-fixtures
 
 ##
 ## Backups

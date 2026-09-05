@@ -53,9 +53,9 @@ final class StatisticsTest extends IntegrationTestCase
         $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
         $this->givenFilmRatedBy('solaris', ['wollkey' => 10]);
 
-        $best = $this->statistics(quorum: 2)->bestFilm();
+        $best = $this->statistics(quorum: 2)->overview()->bestFilm;
 
-        self::assertSame('stalker', $best?->slug);
+        self::assertSame(['stalker'], array_map(static fn ($f) => $f->slug, $best));
     }
 
     public function testWorstFilmRespectsQuorum(): void
@@ -65,9 +65,9 @@ final class StatisticsTest extends IntegrationTestCase
         $this->givenFilmRatedBy('morbius', ['wollkey' => 3, 'lenka' => 4, 'vika' => 3]);
         $this->givenFilmRatedBy('flop', ['wollkey' => 1]);
 
-        $worst = $this->statistics(quorum: 2)->worstFilm();
+        $worst = $this->statistics(quorum: 2)->overview()->worstFilm;
 
-        self::assertSame('morbius', $worst?->slug);
+        self::assertSame(['morbius'], array_map(static fn ($f) => $f->slug, $worst));
     }
 
     public function testMostDivisiveFilmHasLargestSpread(): void
@@ -76,10 +76,10 @@ final class StatisticsTest extends IntegrationTestCase
         $this->givenFilmRatedBy('mother', ['wollkey' => 2, 'lenka' => 9, 'vika' => 5]);
         $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
 
-        $divisive = $this->statistics(quorum: 2)->mostDivisive();
+        $divisive = $this->statistics(quorum: 2)->overview()->mostDivisive;
 
-        self::assertSame('mother', $divisive?->slug);
-        self::assertSame(7, $divisive->spread);
+        self::assertSame(['mother'], array_map(static fn ($f) => $f->slug, $divisive));
+        self::assertSame(7, $divisive[0]->spread);
     }
 
     public function testFormerMemberRatingAppearsInFilmDetail(): void
@@ -103,7 +103,7 @@ final class StatisticsTest extends IntegrationTestCase
         $detail = $this->statistics()->filmDetail('solaris');
 
         $notWatched = array_map(static fn ($m) => $m->username, $detail->notWatched);
-        self::assertArraysHaveIdenticalValuesIgnoringOrder(['vika'], $notWatched);   // ровно vika: не бывший, не смотревший
+        self::assertArraysHaveIdenticalValuesIgnoringOrder(['vika'], $notWatched);   // exactly vika: not former, has not watched it
     }
 
     public function testFilmListWithRatingsGroupsScoresPerFilm(): void
@@ -152,7 +152,7 @@ final class StatisticsTest extends IntegrationTestCase
         $members = $this->indexByUsername($this->statistics()->membersWithStats());
 
         self::assertSame(0, $members['newbie']->watched);
-        self::assertNull($members['newbie']->averageGiven);   // LEFT JOIN → нет оценок → null
+        self::assertNull($members['newbie']->averageGiven);   // LEFT JOIN => no ratings => null
     }
 
     public function testRoundWinnerIsFilmWithHighestAverage(): void

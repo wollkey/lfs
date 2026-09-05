@@ -16,7 +16,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'rating:add',
-    description: 'Интерактивно внести оценки одного участника (batch).',
+    description: 'Enter the ratings of one member interactively.',
 )]
 final class AddRatingsCommand extends Command
 {
@@ -32,23 +32,23 @@ final class AddRatingsCommand extends Command
     {
         $usernameByLabel = $this->activeMemberLabels();
         if ($usernameByLabel === []) {
-            $io->error('Нет активных участников. Сначала members:seed.');
+            $io->error('No active members. Run members:seed first.');
 
             return Command::FAILURE;
         }
 
         $slugByLabel = $this->filmLabels();
         if ($slugByLabel === []) {
-            $io->error('В базе нет фильмов.');
+            $io->error('No films in the database.');
 
             return Command::FAILURE;
         }
 
-        $memberLabel = $io->choice('Чьи оценки вносим?', array_keys($usernameByLabel));
+        $memberLabel = $io->choice('Whose ratings are we entering?', array_keys($usernameByLabel));
         $username = $usernameByLabel[$memberLabel];
 
         $io->writeln(sprintf(
-            'Вносим оценки: <info>%s</info>. Пустой ввод названия — закончить.',
+            'Entering ratings for <info>%s</info>. Empty title to finish.',
             $memberLabel,
         ));
 
@@ -61,7 +61,7 @@ final class AddRatingsCommand extends Command
 
             $current = $this->ratings->findScore($slug, $username);
             if ($current !== null) {
-                $io->writeln(sprintf('  текущая: <comment>%d</comment> (перезапишем)', $current));
+                $io->writeln(sprintf('  current: <comment>%d</comment> (will be overwritten)', $current));
             }
 
             $score = $this->askScore($io);
@@ -71,13 +71,13 @@ final class AddRatingsCommand extends Command
             $io->writeln(sprintf('  <info>✓</info> %s → %d', $slug, $score));
         }
 
-        $io->success(sprintf('Готово. Внесено/обновлено: %d.', $entered));
+        $io->success(sprintf('Done. Entered or updated: %d.', $entered));
 
         return Command::SUCCESS;
     }
 
     /**
-     * @return array<string, string> метка => username, только активные
+     * @return array<string, string> label => username, active members only
      */
     private function activeMemberLabels(): array
     {
@@ -94,7 +94,7 @@ final class AddRatingsCommand extends Command
     }
 
     /**
-     * @return array<string, string> метка => slug; при совпадении названий slug добавляется в метку
+     * @return array<string, string> label => slug; identical titles get the slug appended
      */
     private function filmLabels(): array
     {
@@ -119,11 +119,11 @@ final class AddRatingsCommand extends Command
     /**
      * @param array<string, string> $slugByLabel
      *
-     * @return string|null slug выбранного фильма, либо null при пустом вводе (выход)
+     * @return string|null slug of the chosen film, null on empty input (finish)
      */
     private function askFilm(SymfonyStyle $io, array $slugByLabel): ?string
     {
-        $question = new Question('Фильм');
+        $question = new Question('Film');
         $question->setAutocompleterValues(array_keys($slugByLabel));
         $question->setValidator(static function (?string $answer) use ($slugByLabel): ?string {
             $title = trim((string) $answer);
@@ -131,7 +131,7 @@ final class AddRatingsCommand extends Command
                 return null;
             }
             if (!isset($slugByLabel[$title])) {
-                throw new \RuntimeException("Фильм не найден: «{$title}». Начните вводить название и нажмите Tab.");
+                throw new \RuntimeException("No such film: \"{$title}\". Start typing the title and press Tab.");
             }
 
             return $slugByLabel[$title];
@@ -142,17 +142,17 @@ final class AddRatingsCommand extends Command
 
     private function askScore(SymfonyStyle $io): int
     {
-        $question = new Question('  Оценка (1–10)');
+        $question = new Question('  Score (1–10)');
         $question->setMaxAttempts(null);
         $question->setValidator(static function (?string $answer): int {
             $raw = trim((string) $answer);
             if (!ctype_digit($raw)) {
-                throw new \RuntimeException('Нужно целое число.');
+                throw new \RuntimeException('A whole number is required.');
             }
 
             $score = (int) $raw;
             if ($score < Score::MIN || $score > Score::MAX) {
-                throw new \RuntimeException('Оценка вне диапазона 1–10.');
+                throw new \RuntimeException('Score is outside the 1–10 range.');
             }
 
             return $score;

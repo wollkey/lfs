@@ -48,23 +48,6 @@ final readonly class RoundRepository
         ]);
     }
 
-    public function syncFilm(int $round, string $filmSlug, int $position, string $pickedOn): void
-    {
-        $stmt = $this->pdo->prepare(<<<SQL
-                INSERT INTO round_films (round_number, film_slug, picked_by, position, picked_on)
-                VALUES (:round, :film, NULL, :pos, :picked)
-                ON CONFLICT (round_number, film_slug) DO UPDATE
-                    SET position = excluded.position
-            SQL);
-
-        $stmt->execute([
-            'round' => $round,
-            'film' => $filmSlug,
-            'pos' => $position,
-            'picked' => $pickedOn,
-        ]);
-    }
-
     public function setPicker(int $round, string $filmSlug, string $username): void
     {
         $stmt = $this->pdo->prepare(

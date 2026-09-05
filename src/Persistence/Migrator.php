@@ -13,7 +13,7 @@ final readonly class Migrator
     }
 
     /**
-     * @return string[] версии, применённые в этом запуске
+     * @return string[] versions applied in this run
      */
     public function migrate(): array
     {

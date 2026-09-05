@@ -28,11 +28,6 @@ final class FriendsRatingsParser
         return array_values(array_filter($ratings));
     }
 
-    public function slug(string $html): ?string
-    {
-        return preg_match('~/friends/film/([^/]+)/~', $html, $m) === 1 ? $m[1] : null;
-    }
-
     private function rating(Crawler $tr): ?ParsedRating
     {
         $username = $this->username($tr);

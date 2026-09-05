@@ -50,7 +50,7 @@ final class AssignPickersCommandTest extends IntegrationTestCase
     private function givenRoundFilm(string $slug, int $position): void
     {
         $this->films->save(new Film($slug, ucfirst($slug)));
-        $this->rounds->syncFilm(1, $slug, $position, '2025-01-06');
+        $this->rounds->addFilm(1, $slug, null, $position, '2025-01-06');
     }
 
     private function pickedBy(string $slug): ?string

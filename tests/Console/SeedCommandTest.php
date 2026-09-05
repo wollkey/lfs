@@ -178,7 +178,8 @@ final class SeedCommandTest extends IntegrationTestCase
         $tester = $this->tester();
         self::assertSame(Command::SUCCESS, $tester->execute(['html-dir' => $this->htmlDir]));
 
-        self::assertCount(1, $this->ratings->forFilm('citizen-kane'));
+        self::assertSame(7, $this->ratings->findScore('citizen-kane', 'atomic_rage'));
+        self::assertCount(1, $this->ratings->scores());
         self::assertStringContainsString('not a club member', $tester->getDisplay());
     }
 

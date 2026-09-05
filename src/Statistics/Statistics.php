@@ -46,38 +46,6 @@ final readonly class Statistics
         );
     }
 
-    public function bestFilm(): ?RatedFilm
-    {
-        return $this->pickFilm(
-            $this->ratedFilms(),
-            static fn (RatedFilm $a, RatedFilm $b) => $b->average <=> $a->average,
-        );
-    }
-
-    public function worstFilm(): ?RatedFilm
-    {
-        return $this->pickFilm(
-            $this->ratedFilms(),
-            static fn (RatedFilm $a, RatedFilm $b) => $a->average <=> $b->average,
-        );
-    }
-
-    public function mostDivisive(): ?RatedFilm
-    {
-        return $this->pickFilm(
-            $this->ratedFilms(),
-            static fn (RatedFilm $a, RatedFilm $b) => $b->stdDev <=> $a->stdDev,
-        );
-    }
-
-    public function mostAgreed(): ?RatedFilm
-    {
-        return $this->pickFilm(
-            $this->ratedFilms(),
-            static fn (RatedFilm $a, RatedFilm $b) => $a->stdDev <=> $b->stdDev,
-        );
-    }
-
     /**
      * @return MemberStats[]
      */
@@ -416,8 +384,8 @@ final readonly class Statistics
     }
 
     /**
-     * Все фильмы, набравшие кворум, со всеми метриками.
-     * stdDev считаем в PHP — в SQLite нет STDDEV.
+     * Every film that reached the quorum, with all its metrics.
+     * stdDev is computed in PHP — SQLite has no STDDEV.
      *
      * @return RatedFilm[]
      */
@@ -750,8 +718,8 @@ final readonly class Statistics
     }
 
     /**
-     * Кураторская статистика: среднее ИЗ СРЕДНИХ по кворумным пикам.
-     * Каждый пик весит одинаково — «насколько в среднем заходит одна ставка».
+     * Curator statistics: the average OF AVERAGES over picks that reached the quorum.
+     * Every pick weighs the same — how well a single bet lands on average.
      *
      * @return array<string, array{picks: int, average: float}>
      */

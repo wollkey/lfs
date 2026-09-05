@@ -7,7 +7,6 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Console\AddRatingsCommand;
 use App\Console\AssignPickersCommand;
-use App\Console\FetchFixturesCommand;
 use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
 use App\Console\PostFlashbackCommand;
@@ -83,7 +82,6 @@ $microPoster = new MicroPoster($telegramClient, $telegramChatId);
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedMembersCommand($members));
-$app->addCommand(new FetchFixturesCommand());
 $app->addCommand(new SeedCommand($listParser, $newFilms, $scrapedRatings, $filmPage, $posters, $films, $members));
 $app->addCommand(new FetchPostersCommand($filmPage, $posters, $films));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
