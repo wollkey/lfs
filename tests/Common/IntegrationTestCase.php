@@ -41,16 +41,22 @@ abstract class IntegrationTestCase extends TestCase
         return new Statistics($this->pdo, $quorum);
     }
 
+    /**
+     * Active members are numbered in the order given, the way members:seed does it.
+     */
     protected function givenMembers(string ...$usernames): void
     {
-        foreach ($usernames as $username) {
-            $this->givenMember($username);
+        foreach ($usernames as $i => $username) {
+            $this->givenMember($username, position: $i + 1);
         }
     }
 
-    protected function givenMember(string $username, MemberStatus $status = MemberStatus::Active): void
-    {
-        $this->members->save(new Member($username, ucfirst($username), $status));
+    protected function givenMember(
+        string $username,
+        MemberStatus $status = MemberStatus::Active,
+        ?int $position = null,
+    ): void {
+        $this->members->save(new Member($username, ucfirst($username), $status, $position));
     }
 
     protected function givenRound(int $number, ?string $startedOn = null, ?string $endedOn = null): void

@@ -6,6 +6,7 @@ namespace App\Tests\Console;
 
 use App\Console\SeedCommand;
 use App\Domain\Film;
+use App\Domain\MemberStatus;
 use App\Letterboxd\FilmPage;
 use App\Letterboxd\Parser\ActivityParser;
 use App\Letterboxd\Parser\FilmPageParser;
@@ -28,7 +29,6 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class SeedCommandTest extends IntegrationTestCase
 {
     private const string JPEG = "\xFF\xD8\xFF\xE0";
-    private const string PICKER = 'Lenka (@lenka)';
 
     private string $htmlDir;
     private string $posterDir;
@@ -58,12 +58,11 @@ final class SeedCommandTest extends IntegrationTestCase
     public function testAddsTheScrapedFilmWithItsPickerSlotAndPoster(): void
     {
         $this->givenMembers('wollkey', 'lenka');
-        $this->givenRoundFilm(6, 'city-lights', 1);
+        $this->givenRoundFilm(6, 'city-lights', 1, 'wollkey');
         $this->givenPoster('city-lights');
         $this->givenFriendsPage('drive-2011');
 
         $tester = $this->tester();
-        $tester->setInputs([self::PICKER]);
 
         self::assertSame(Command::SUCCESS, $tester->execute(['html-dir' => $this->htmlDir]));
 
@@ -75,17 +74,59 @@ final class SeedCommandTest extends IntegrationTestCase
     public function testStartsANewRoundOnceEveryActiveMemberHasPicked(): void
     {
         $this->givenMembers('wollkey', 'lenka');
-        $this->givenRoundFilm(6, 'city-lights', 1);
-        $this->givenRoundFilm(6, 'stalker', 2);
+        $this->givenRoundFilm(6, 'city-lights', 1, 'wollkey');
+        $this->givenRoundFilm(6, 'stalker', 2, 'lenka');
         $this->givenPoster('city-lights');
         $this->givenPoster('stalker');
         $this->givenFriendsPage('drive-2011');
 
         $tester = $this->tester();
-        $tester->setInputs([self::PICKER]);
         $tester->execute(['html-dir' => $this->htmlDir]);
 
-        self::assertSame([7, 1, 'lenka', date('Y-m-d')], $this->slot('drive-2011'));
+        self::assertSame([7, 1, 'wollkey', date('Y-m-d')], $this->slot('drive-2011'));
+    }
+
+    public function testPickerIsWhoeverHasNotPickedInThisRoundYet(): void
+    {
+        $this->givenMembers('lenka', 'christallisme', 'wollkey', 'psy667');
+        $this->givenRoundFilm(6, 'city-lights', 1, 'lenka');
+        $this->givenRoundFilm(6, 'stalker', 2, 'christallisme');
+        $this->givenPoster('city-lights');
+        $this->givenPoster('stalker');
+        $this->givenFriendsPage('drive-2011');
+
+        $tester = $this->tester();
+        $tester->execute(['html-dir' => $this->htmlDir]);
+
+        self::assertSame('wollkey', $this->slot('drive-2011')[2]);
+        self::assertStringContainsString('picked by wollkey', $tester->getDisplay());
+    }
+
+    public function testPickerSkipsAMemberWhoAlreadyTookTheirTurnOutOfOrder(): void
+    {
+        $this->givenMembers('lenka', 'christallisme', 'wollkey', 'psy667');
+        $this->givenRoundFilm(6, 'city-lights', 1, 'lenka');
+        $this->givenRoundFilm(6, 'stalker', 2, 'wollkey');
+        $this->givenPoster('city-lights');
+        $this->givenPoster('stalker');
+        $this->givenFriendsPage('drive-2011');
+
+        $this->tester()->execute(['html-dir' => $this->htmlDir]);
+
+        self::assertSame('christallisme', $this->slot('drive-2011')[2]);
+    }
+
+    public function testFormerMembersAreOutOfTheRotation(): void
+    {
+        $this->givenMember('justdanya', MemberStatus::Former, 1);
+        $this->givenMembers('lenka', 'christallisme');
+        $this->givenRoundFilm(6, 'city-lights', 1, 'lenka');
+        $this->givenPoster('city-lights');
+        $this->givenFriendsPage('drive-2011');
+
+        $this->tester()->execute(['html-dir' => $this->htmlDir]);
+
+        self::assertSame('christallisme', $this->slot('drive-2011')[2]);
     }
 
     public function testImportsRatingsFromFriendsAndActivity(): void
@@ -126,7 +167,6 @@ final class SeedCommandTest extends IntegrationTestCase
         $this->givenKnownFilm('citizen-kane');
 
         $first = $this->tester();
-        $first->setInputs([self::PICKER]);
         $first->execute(['html-dir' => $this->htmlDir]);
 
         $before = $this->dump();
@@ -148,7 +188,6 @@ final class SeedCommandTest extends IntegrationTestCase
         $this->givenFriendsPage('drive-2011');
 
         $tester = $this->tester();
-        $tester->setInputs([self::PICKER]);
 
         self::assertSame(Command::SUCCESS, $tester->execute(['html-dir' => $this->htmlDir]));
         self::assertNotNull($this->films->find('drive-2011'));
@@ -274,7 +313,6 @@ final class SeedCommandTest extends IntegrationTestCase
             $filmPage,
             $posters,
             $this->films,
-            $this->members,
         ));
 
         return new CommandTester($application->find('seed'));

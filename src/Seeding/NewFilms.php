@@ -50,9 +50,10 @@ final readonly class NewFilms
     }
 
     /**
-     * @return array{slug: string, title: string, round: int, position: int}|null null when the page is unreachable
+     * @return array{slug: string, title: string, round: int, position: int, picker: ?string}|null
+     *                                                                                             null when the page is unreachable
      */
-    public function add(string $slug, ?string $pickedBy, string $pickedOn): ?array
+    public function add(string $slug, string $pickedOn): ?array
     {
         $film = $this->page->fetch($slug);
         if ($film === null) {
@@ -64,30 +65,47 @@ final readonly class NewFilms
 
         $this->films->save(new Film($slug, $film->title));
 
-        [$round, $position] = $this->slot($slug);
+        // Keep whatever the film already has; only a fresh slot takes the next turn.
+        $slot = $this->rounds->slotOf($slug) ?? $this->nextSlot();
 
-        $this->rounds->ensure($round);
-        $this->rounds->addFilm($round, $slug, $pickedBy, $position, $pickedOn);
+        $this->rounds->ensure($slot['round']);
+        $this->rounds->addFilm($slot['round'], $slug, $slot['picker'], $slot['position'], $pickedOn);
 
-        return ['slug' => $slug, 'title' => $film->title, 'round' => $round, 'position' => $position];
+        return ['slug' => $slug, 'title' => $film->title, ...$slot];
     }
 
     /**
-     * A round holds one pick per active member; the film keeps its slot once it has one.
+     * A round holds one pick per active member, taken in roster order.
      *
-     * @return array{int, int}
+     * @return array{round: int, position: int, picker: ?string}
      */
-    private function slot(string $slug): array
+    private function nextSlot(): array
     {
-        $existing = $this->rounds->slotOf($slug);
-        if ($existing !== null) {
-            return $existing;
+        $last = $this->rounds->lastRound() ?? 1;
+        $full = $this->rounds->filmCount($last) >= count($this->members->active());
+
+        $round = $full ? $last + 1 : $last;
+
+        return [
+            'round' => $round,
+            'position' => $full ? 1 : $this->rounds->maxPosition($last) + 1,
+            'picker' => $this->nextPicker($round),
+        ];
+    }
+
+    /**
+     * The active member, in roster order, whose turn has not come round yet.
+     */
+    private function nextPicker(int $round): ?string
+    {
+        $taken = array_flip($this->rounds->pickersIn($round));
+
+        foreach ($this->members->active() as $member) {
+            if ($member->position !== null && !isset($taken[$member->username])) {
+                return $member->username;
+            }
         }
 
-        $last = $this->rounds->lastRound() ?? 1;
-
-        return $this->rounds->filmCount($last) >= count($this->members->active())
-            ? [$last + 1, 1]
-            : [$last, $this->rounds->maxPosition($last) + 1];
+        return null;
     }
 }

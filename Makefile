@@ -92,7 +92,7 @@ seed-members: ## Insert or update the club roster from data/roster.json
 .PHONY: seed-members
 
 seed: ## Update the DB from data/: new films, ratings, missing posters
-	@$(CONSOLE_TTY) seed $(DIR)
+	@$(CONSOLE) seed $(DIR)
 .PHONY: seed
 
 refresh-posters: ## Re-download every poster at full resolution

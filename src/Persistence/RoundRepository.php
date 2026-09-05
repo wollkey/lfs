@@ -133,12 +133,12 @@ final readonly class RoundRepository
     }
 
     /**
-     * @return array{int, int}|null round and position, null when the film has no slot yet
+     * @return array{round: int, position: int, picker: ?string}|null null when the film has no slot yet
      */
     public function slotOf(string $filmSlug): ?array
     {
         $stmt = $this->pdo->prepare(<<<SQL
-                SELECT round_number, position FROM round_films
+                SELECT round_number, position, picked_by FROM round_films
                 WHERE film_slug = :film
                 ORDER BY round_number DESC LIMIT 1
             SQL);
@@ -146,6 +146,23 @@ final readonly class RoundRepository
 
         $row = $stmt->fetch();
 
-        return $row === false ? null : [(int) $row['round_number'], (int) $row['position']];
+        return $row === false ? null : [
+            'round' => (int) $row['round_number'],
+            'position' => (int) $row['position'],
+            'picker' => $row['picked_by'],
+        ];
+    }
+
+    /**
+     * @return list<string> members who already picked in this round
+     */
+    public function pickersIn(int $round): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT DISTINCT picked_by FROM round_films WHERE round_number = :round AND picked_by IS NOT NULL',
+        );
+        $stmt->execute(['round' => $round]);
+
+        return array_map(static fn (array $row) => (string) $row['picked_by'], $stmt->fetchAll());
     }
 }

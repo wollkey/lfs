@@ -9,7 +9,6 @@ use App\Letterboxd\FilmPage;
 use App\Letterboxd\Parser\ListParser;
 use App\Letterboxd\Posters;
 use App\Persistence\FilmRepository;
-use App\Persistence\MemberRepository;
 use App\Seeding\NewFilms;
 use App\Seeding\ScrapedRatings;
 use Symfony\Component\Console\Attribute\Argument;
@@ -23,8 +22,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class SeedCommand extends Command
 {
-    private const string SKIP = '— skip for now (decide later)';
-
     public function __construct(
         private readonly ListParser $listParser,
         private readonly NewFilms $newFilms,
@@ -32,7 +29,6 @@ final class SeedCommand extends Command
         private readonly FilmPage $filmPage,
         private readonly Posters $posters,
         private readonly FilmRepository $films,
-        private readonly MemberRepository $members,
     ) {
         parent::__construct();
     }
@@ -83,7 +79,7 @@ final class SeedCommand extends Command
         $today = date('Y-m-d');
 
         foreach ($pending as $slug) {
-            $added = $this->newFilms->add($slug, $this->picker($io, $slug), $today);
+            $added = $this->newFilms->add($slug, $today);
 
             if ($added === null) {
                 $io->warning("Could not read the Letterboxd page for {$slug}.");
@@ -91,32 +87,13 @@ final class SeedCommand extends Command
             }
 
             $io->text(sprintf(
-                'Added "%s" — round %d, pick #%d.',
+                'Added "%s" — round %d, pick #%d, picked by %s.',
                 $added['title'],
                 $added['round'],
                 $added['position'],
+                $added['picker'] ?? 'nobody yet (run make pick)',
             ));
         }
-    }
-
-    private function picker(SymfonyStyle $io, string $slug): ?string
-    {
-        $labels = [];
-        foreach ($this->members->active() as $member) {
-            $labels[sprintf('%s (@%s)', $member->displayName, $member->username)] = $member->username;
-        }
-
-        if ($labels === []) {
-            return null;
-        }
-
-        $choice = $io->choice(
-            sprintf('New film "%s". Who picked it?', $slug),
-            [...array_keys($labels), self::SKIP],
-            self::SKIP,
-        );
-
-        return $labels[$choice] ?? null;
     }
 
     private function seedRatings(SymfonyStyle $io, string $htmlDir): void

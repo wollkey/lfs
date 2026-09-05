@@ -82,7 +82,7 @@ $microPoster = new MicroPoster($telegramClient, $telegramChatId);
 $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedMembersCommand($members));
-$app->addCommand(new SeedCommand($listParser, $newFilms, $scrapedRatings, $filmPage, $posters, $films, $members));
+$app->addCommand(new SeedCommand($listParser, $newFilms, $scrapedRatings, $filmPage, $posters, $films));
 $app->addCommand(new FetchPostersCommand($filmPage, $posters, $films));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
