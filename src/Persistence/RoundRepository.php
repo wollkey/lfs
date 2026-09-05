@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Persistence;
 
-namespace App\Persistence;
-
 use App\Domain\Round;
-use PDO;
 
 final readonly class RoundRepository
 {
     public function __construct(
-        private PDO $pdo,
+        private \PDO $pdo,
     ) {
     }
 
@@ -124,5 +121,48 @@ final readonly class RoundRepository
             'INSERT INTO rounds (number) VALUES (:n) ON CONFLICT (number) DO NOTHING',
         );
         $stmt->execute(['n' => $number]);
+    }
+
+    /**
+     * The highest round that actually holds films, not the highest declared round.
+     */
+    public function lastRound(): ?int
+    {
+        $number = $this->pdo->query('SELECT MAX(round_number) FROM round_films')->fetchColumn();
+
+        return $number === false || $number === null ? null : (int) $number;
+    }
+
+    public function filmCount(int $round): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM round_films WHERE round_number = :round');
+        $stmt->execute(['round' => $round]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function maxPosition(int $round): int
+    {
+        $stmt = $this->pdo->prepare('SELECT MAX(position) FROM round_films WHERE round_number = :round');
+        $stmt->execute(['round' => $round]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return array{int, int}|null round and position, null when the film has no slot yet
+     */
+    public function slotOf(string $filmSlug): ?array
+    {
+        $stmt = $this->pdo->prepare(<<<SQL
+                SELECT round_number, position FROM round_films
+                WHERE film_slug = :film
+                ORDER BY round_number DESC LIMIT 1
+            SQL);
+        $stmt->execute(['film' => $filmSlug]);
+
+        $row = $stmt->fetch();
+
+        return $row === false ? null : [(int) $row['round_number'], (int) $row['position']];
     }
 }

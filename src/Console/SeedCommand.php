@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Domain\Film;
-use App\Domain\Member;
-use App\Letterboxd\Dto\ParsedFilm;
-use App\Letterboxd\Parser\ActivityParser;
-use App\Letterboxd\Parser\FriendsRatingsParser;
+use App\Letterboxd\FilmPage;
 use App\Letterboxd\Parser\ListParser;
+use App\Letterboxd\Posters;
 use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
-use App\Persistence\RatingRepository;
-use App\Persistence\RoundRepository;
+use App\Seeding\NewFilms;
+use App\Seeding\ScrapedRatings;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,163 +19,139 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'seed',
-    description: 'Parse local HTML and upsert films, ratings and round structure into the DB.',
+    description: 'Update the club from the scraped HTML: new films, ratings and missing posters.',
 )]
 final class SeedCommand extends Command
 {
-    private const int FIRST_ROUND_SIZE = 20;
-    private const int ROUND_SIZE = 10;
+    private const string SKIP = '— skip for now (decide later)';
 
     public function __construct(
         private readonly ListParser $listParser,
-        private readonly FriendsRatingsParser $friendsParser,
-        private readonly ActivityParser $activityParser,
+        private readonly NewFilms $newFilms,
+        private readonly ScrapedRatings $scrapedRatings,
+        private readonly FilmPage $filmPage,
+        private readonly Posters $posters,
         private readonly FilmRepository $films,
         private readonly MemberRepository $members,
-        private readonly RatingRepository $ratings,
-        private readonly RoundRepository $rounds,
     ) {
         parent::__construct();
     }
 
     public function __invoke(
         SymfonyStyle $io,
-        #[Argument(description: 'Directory with list.html and friends/{slug}.html')]
+        #[Argument(description: 'Directory with list.html, friends/ and friends_activity/')]
         string $htmlDir = 'data',
     ): int {
-        $listFile = "{$htmlDir}/list.html";
-        if (!is_file($listFile)) {
-            $io->error("List HTML not found: {$listFile}");
+        if (!is_dir($htmlDir)) {
+            $io->error("HTML directory not found: {$htmlDir}");
 
             return Command::INVALID;
         }
 
-        $listHtml = (string) file_get_contents($listFile);
-        $films = $this->listParser->parse($listHtml);
+        $this->seedTitles($htmlDir);
+        $this->seedFilms($io, $htmlDir);
+        $this->seedRatings($io, $htmlDir);
+        $this->seedPosters($io);
 
-        $this->seedFilms($films);
-        $this->seedRounds($films);
-
-        $written = [
-            ...$this->seedRatings($io, $htmlDir, $listHtml, $films),
-            ...$this->seedActivityRatings($io, $htmlDir, $films),
-        ];
-
-        $io->success(sprintf(
-            'Seeded %d film(s) and %d rating(s).',
-            count($films),
-            count(array_unique($written)),
-        ));
+        $io->success('Database up to date. Next: make deploy.');
 
         return Command::SUCCESS;
     }
 
     /**
-     * @param list<ParsedFilm> $films
+     * Optional: the list page only refreshes titles now, the round structure lives in the DB.
      */
-    private function seedFilms(array $films): void
+    private function seedTitles(string $htmlDir): void
     {
-        foreach ($films as $film) {
+        $file = "{$htmlDir}/list.html";
+        if (!is_file($file)) {
+            return;
+        }
+
+        foreach ($this->listParser->parse((string) file_get_contents($file)) as $film) {
             $this->films->save(new Film($film->slug, $film->title));
         }
     }
 
-    /**
-     * Rebuilds round structure (20/10/10) from list order; keeps existing picked_by.
-     *
-     * @param list<ParsedFilm> $films
-     */
-    private function seedRounds(array $films): void
+    private function seedFilms(SymfonyStyle $io, string $htmlDir): void
     {
-        $round = 1;
-        $positionInRound = 0;
-        $roundCapacity = self::FIRST_ROUND_SIZE;
+        $pending = $this->newFilms->pending($htmlDir);
+        if ($pending === []) {
+            return;
+        }
+
         $today = date('Y-m-d');
 
-        foreach ($films as $film) {
-            if ($positionInRound === $roundCapacity) {
-                ++$round;
-                $positionInRound = 0;
-                $roundCapacity = self::ROUND_SIZE;
-            }
-            ++$positionInRound;
+        foreach ($pending as $slug) {
+            $added = $this->newFilms->add($slug, $this->picker($io, $slug), $today);
 
-            $this->rounds->ensure($round);
-            $this->rounds->syncFilm($round, $film->slug, $positionInRound, $today);
-        }
-    }
-
-    /**
-     * @param list<ParsedFilm> $films
-     *
-     * @return list<string> "slug|username" of each rating written
-     */
-    private function seedRatings(SymfonyStyle $io, string $htmlDir, string $listHtml, array $films): array
-    {
-        $written = [];
-
-        foreach ($this->listParser->ownerRatings($listHtml) as $slug => $rating) {
-            $this->ratings->setRating($slug, $rating->username, $rating->rating);
-            $written[] = "{$slug}|{$rating->username}";
-        }
-
-        foreach ($films as $film) {
-            $friendsFile = "{$htmlDir}/friends/{$film->slug}.html";
-            if (!is_file($friendsFile)) {
-                $io->warning(sprintf('No friends page for "%s".', $film->slug));
+            if ($added === null) {
+                $io->warning("Could not read the Letterboxd page for {$slug}.");
                 continue;
             }
 
-            $friendRatings = $this->friendsParser->parse((string) file_get_contents($friendsFile));
-            foreach ($friendRatings as $rating) {
-                $this->ratings->setRating($film->slug, $rating->username, $rating->rating);
-                $written[] = "{$film->slug}|{$rating->username}";
-            }
+            $io->text(sprintf(
+                'Added "%s" — round %d, pick #%d.',
+                $added['title'],
+                $added['round'],
+                $added['position'],
+            ));
         }
-
-        return $written;
     }
 
-    /**
-     * Optional friends_activity/{username}.html fragments; only club films are kept.
-     *
-     * @param list<ParsedFilm> $films
-     *
-     * @return list<string> "slug|username" of each rating written
-     */
-    private function seedActivityRatings(SymfonyStyle $io, string $htmlDir, array $films): array
+    private function picker(SymfonyStyle $io, string $slug): ?string
     {
-        $activityDir = "{$htmlDir}/friends_activity";
-        if (!is_dir($activityDir)) {
-            return [];
+        $labels = [];
+        foreach ($this->members->active() as $member) {
+            $labels[sprintf('%s (@%s)', $member->displayName, $member->username)] = $member->username;
         }
 
-        $known = array_flip(array_map(static fn (ParsedFilm $film) => $film->slug, $films));
-        $members = array_flip(array_map(static fn (Member $member) => $member->username, $this->members->all()));
+        if ($labels === []) {
+            return null;
+        }
 
-        $written = [];
-        foreach (glob("{$activityDir}/*.html") as $file) {
-            $username = basename($file, '.html');
-            if (!isset($members[$username])) {
-                $io->warning(sprintf('Skipping "%s": not a known member.', basename($file)));
+        $choice = $io->choice(
+            sprintf('New film "%s". Who picked it?', $slug),
+            [...array_keys($labels), self::SKIP],
+            self::SKIP,
+        );
+
+        return $labels[$choice] ?? null;
+    }
+
+    private function seedRatings(SymfonyStyle $io, string $htmlDir): void
+    {
+        ['added' => $added, 'updated' => $updated, 'skipped' => $skipped] = $this->scrapedRatings->import($htmlDir);
+
+        foreach ($skipped as $username) {
+            $io->warning(sprintf('Skipping "%s": not a club member.', $username));
+        }
+
+        $io->text($added === 0 && $updated === 0
+            ? 'Ratings: nothing changed.'
+            : sprintf('Ratings: %d new, %d changed.', $added, $updated));
+    }
+
+    private function seedPosters(SymfonyStyle $io): void
+    {
+        $fetched = 0;
+
+        foreach ($this->films->slugs() as $slug) {
+            if ($this->posters->has($slug)) {
                 continue;
             }
 
-            $ratings = $this->activityParser->parse((string) file_get_contents($file));
-            foreach ($ratings as $slug => $score) {
-                if (!isset($known[$slug])) {
-                    continue;
-                }
-
-                $this->ratings->setRating($slug, $username, $score);
-                $written[] = "{$slug}|{$username}";
+            $film = $this->filmPage->fetch($slug);
+            if ($film?->posterUrl === null || !$this->posters->fetch($slug, $film->posterUrl)) {
+                $io->warning("No poster for {$slug}.");
+                continue;
             }
+
+            ++$fetched;
         }
 
-        if ($written === []) {
-            $io->note(sprintf('No club-film ratings found in "%s".', $activityDir));
+        if ($fetched > 0) {
+            $io->text(sprintf('Posters: %d downloaded.', $fetched));
         }
-
-        return $written;
     }
 }

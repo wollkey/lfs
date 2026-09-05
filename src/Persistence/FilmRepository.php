@@ -32,6 +32,17 @@ final readonly class FilmRepository
     }
 
     /**
+     * @return list<string>
+     */
+    public function slugs(): array
+    {
+        return array_map(
+            static fn (array $r) => (string) $r['slug'],
+            $this->pdo->query('SELECT slug FROM films')->fetchAll(),
+        );
+    }
+
+    /**
      * @return Film[]
      */
     public function all(): array

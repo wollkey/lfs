@@ -18,14 +18,20 @@ use App\Console\SeedCommand;
 use App\Console\SeedMembersCommand;
 use App\Console\SetWebhookCommand;
 use App\Letterboxd\Parser\ActivityParser;
+use App\Letterboxd\Parser\FilmPageParser;
 use App\Letterboxd\Parser\ListParser;
 use App\Letterboxd\Parser\FriendsRatingsParser;
+use App\Letterboxd\FilmPage;
+use App\Letterboxd\Posters;
+use App\Letterboxd\Scraper\StreamDownloader;
 use App\Persistence\Connection;
 use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
 use App\Persistence\Migrator;
 use App\Persistence\RatingRepository;
 use App\Persistence\RoundRepository;
+use App\Seeding\NewFilms;
+use App\Seeding\ScrapedRatings;
 use App\Statistics\Statistics;
 use App\Telegram\Card\CardChrome;
 use App\Telegram\Card\PanelsCard;
@@ -48,6 +54,14 @@ $rounds = new RoundRepository($pdo);
 $listParser = new ListParser();
 $ratingParser = new FriendsRatingsParser();
 $activityParser = new ActivityParser();
+$filmPageParser = new FilmPageParser();
+
+$downloader = new StreamDownloader();
+$filmPage = new FilmPage($downloader, $filmPageParser);
+$posters = new Posters($downloader, __DIR__ . '/../public/posters');
+
+$newFilms = new NewFilms($filmPage, $films, $members, $rounds);
+$scrapedRatings = new ScrapedRatings($listParser, $ratingParser, $activityParser, $films, $members, $ratings);
 
 $stats = new Statistics($pdo);
 $siteUrl = getenv('LFS_SITE_URL') ?: 'https://lfs.wollkey.ru';
@@ -70,8 +84,8 @@ $app = new Application('LFS');
 $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedMembersCommand($members));
 $app->addCommand(new FetchFixturesCommand());
-$app->addCommand(new SeedCommand($listParser, $ratingParser, $activityParser, $films, $members, $ratings, $rounds));
-$app->addCommand(new FetchPostersCommand($listParser));
+$app->addCommand(new SeedCommand($listParser, $newFilms, $scrapedRatings, $filmPage, $posters, $films, $members));
+$app->addCommand(new FetchPostersCommand($filmPage, $posters, $films));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
 $app->addCommand(new PostRoundStandingsCommand(

@@ -29,6 +29,19 @@ final readonly class RatingRepository
     }
 
     /**
+     * @return array<string, int> score keyed by "film_slug|member_username"
+     */
+    public function scores(): array
+    {
+        $scores = [];
+        foreach ($this->pdo->query('SELECT film_slug, member_username, score FROM ratings') as $row) {
+            $scores["{$row['film_slug']}|{$row['member_username']}"] = (int) $row['score'];
+        }
+
+        return $scores;
+    }
+
+    /**
      * @return Rating[]
      */
     public function forFilm(string $filmSlug): array

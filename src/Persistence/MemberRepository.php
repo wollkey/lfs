@@ -45,6 +45,21 @@ final readonly class MemberRepository
     /**
      * @return Member[]
      */
+    public function active(): array
+    {
+        return array_map(
+            static fn (array $r) => new Member($r['username'], $r['display_name'], MemberStatus::Active, $r['position']),
+            $this->pdo->query(<<<SQL
+                    SELECT username, display_name, position FROM members
+                    WHERE status = 'active'
+                    ORDER BY position, display_name
+                SQL)->fetchAll(),
+        );
+    }
+
+    /**
+     * @return Member[]
+     */
     public function all(): array
     {
         return array_map(

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LFS scraper
 // @namespace    lfs
-// @version      1.2.0
+// @version      1.4.0
 // @description  Grabs Last Frame Society ratings from Letterboxd and POSTs them to the local dev server.
 // @match        https://letterboxd.com/*
 // @grant        GM_xmlhttpRequest
@@ -57,7 +57,7 @@
                 console.error('[LFS]', name, e);
             }
 
-            await sleep(2000 + Math.random() * 1500);
+            if (i < names.length - 1) await sleep(2000 + Math.random() * 1500);
         }
 
         setStatus(`${kind}: готово${failed.length ? `, не удалось: ${failed.join(', ')}` : ''}`);
@@ -70,6 +70,23 @@
             slug => `https://letterboxd.com/wollkey/friends/film/${slug}/`, 'friends', setStatus);
     }
 
+    const filmSlug = () =>
+        location.pathname.match(/^\/film\/([^/]+)\//)?.[1]
+        ?? location.pathname.match(/\/friends\/film\/([^/]+)\//)?.[1]
+        ?? null;
+
+    // The weekly single film: one request instead of the whole club list.
+    async function scrapeOneFilm(setStatus) {
+        const slug = filmSlug() ?? prompt('Slug фильма?')?.trim();
+        if (!slug) {
+            setStatus('Открой страницу /film/<slug>/ и нажми снова');
+            return;
+        }
+
+        await run('Фильм', [slug],
+            s => `https://letterboxd.com/wollkey/friends/film/${s}/`, 'friends', setStatus);
+    }
+
     async function scrapeActivity(setStatus) {
         setStatus('Активность: получаю участников…');
         const {members} = await getJson(`${API}/members`);
@@ -78,27 +95,13 @@
             user => `https://letterboxd.com/ajax/activity-pagination/${user}/`, 'activity', setStatus);
     }
 
-    // Scroll to the bottom so lazy posters load their srcset.
-    async function loadLazyPosters() {
-        let last = -1;
-        for (let i = 0; i < 60 && document.body.scrollHeight !== last; i++) {
-            last = document.body.scrollHeight;
-            window.scrollTo(0, last);
-            await sleep(400);
-        }
-        window.scrollTo(0, 0);
-        await sleep(300);
-    }
-
-    // List needs the rendered DOM (lazy posters), so capture the page, don't fetch.
+    // Titles and own ratings only — posters come from each film's public page,
+    // so there is nothing lazy left to scroll into view.
     async function scrapeList(setStatus) {
         if (location.pathname !== LIST_PATH) {
             setStatus(`Открой страницу списка (${LIST_PATH}) и нажми снова`);
             return;
         }
-
-        setStatus('Список: гружу постеры…');
-        await loadLazyPosters();
 
         setStatus('Список: сохраняю…');
         await post('list', '', document.documentElement.outerHTML);
@@ -149,6 +152,7 @@
         };
 
         buttons.append(
+            make('Фильм', scrapeOneFilm),
             make('Список', scrapeList),
             make('Фильмы', scrapeFilms),
             make('Активность', scrapeActivity),

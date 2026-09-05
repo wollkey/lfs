@@ -91,13 +91,13 @@ seed-members: ## Insert or update the club roster from data/roster.json
 	@$(CONSOLE) members:seed
 .PHONY: seed-members
 
-seed: ## Parse local HTML into the DB (films, ratings, round structure)
-	@$(CONSOLE) seed $(DIR)
+seed: ## Update the DB from data/: new films, ratings, missing posters
+	@$(CONSOLE_TTY) seed $(DIR)
 .PHONY: seed
 
-fetch-posters: ## DEV: download posters from data/list.html into public/posters/
-	@$(CONSOLE) posters:fetch
-.PHONY: fetch-posters
+refresh-posters: ## Re-download every poster at full resolution
+	@$(CONSOLE) posters:fetch --force
+.PHONY: refresh-posters
 
 fresh: ## Recreate empty DB + seed roster (DROPS DATA)
 	@rm -f $(DB)
@@ -176,6 +176,9 @@ rector-check: ## Check Rector rules (dry run)
 
 DEPLOY_SSH ?= lfs-vds
 REMOTE_DIR := /var/www/lfs
+
+deploy: deploy-db deploy-posters ## Deploy the database and the posters
+.PHONY: deploy
 
 deploy-db: backup ## Copy the DB file to production and restart the app
 	@SNAP=backups/lfs-$(shell date +%F).sqlite; \
