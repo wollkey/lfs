@@ -129,6 +129,22 @@ final class SeedCommandTest extends IntegrationTestCase
         self::assertSame('christallisme', $this->slot('drive-2011')[2]);
     }
 
+    public function testClearingAPositionTakesAMemberOutOfTheRotationAndTheRoundSize(): void
+    {
+        $this->givenMembers('lenka', 'christallisme');
+        $this->givenMember('wollkey', position: null);
+        $this->givenRoundFilm(6, 'city-lights', 1, 'lenka');
+        $this->givenRoundFilm(6, 'stalker', 2, 'christallisme');
+        $this->givenPoster('city-lights');
+        $this->givenPoster('stalker');
+        $this->givenFriendsPage('drive-2011');
+
+        $this->tester()->execute(['html-dir' => $this->htmlDir]);
+
+        // Both members in the rotation have picked, so the round is full at two.
+        self::assertSame([7, 1, 'lenka', date('Y-m-d')], $this->slot('drive-2011'));
+    }
+
     public function testImportsRatingsFromFriendsAndActivity(): void
     {
         $this->givenMembers('atomic_rage', 'vika');

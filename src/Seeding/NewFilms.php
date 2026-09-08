@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Seeding;
 
 use App\Domain\Film;
+use App\Domain\Member;
 use App\Letterboxd\FilmPage;
 use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
@@ -75,14 +76,14 @@ final readonly class NewFilms
     }
 
     /**
-     * A round holds one pick per active member, taken in roster order.
+     * A round holds one pick per member in the rotation.
      *
      * @return array{round: int, position: int, picker: ?string}
      */
     private function nextSlot(): array
     {
         $last = $this->rounds->lastRound() ?? 1;
-        $full = $this->rounds->filmCount($last) >= count($this->members->active());
+        $full = $this->rounds->filmCount($last) >= count($this->rotation());
 
         $round = $full ? $last + 1 : $last;
 
@@ -94,18 +95,32 @@ final readonly class NewFilms
     }
 
     /**
-     * The active member, in roster order, whose turn has not come round yet.
+     * The member whose turn has not come round yet.
      */
     private function nextPicker(int $round): ?string
     {
         $taken = array_flip($this->rounds->pickersIn($round));
 
-        foreach ($this->members->active() as $member) {
-            if ($member->position !== null && !isset($taken[$member->username])) {
+        foreach ($this->rotation() as $member) {
+            if (!isset($taken[$member->username])) {
                 return $member->username;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Active members in picking order. Clearing a member's position takes them
+     * out of the rotation — and out of the round size — until it is restored.
+     *
+     * @return list<Member>
+     */
+    private function rotation(): array
+    {
+        return array_values(array_filter(
+            $this->members->active(),
+            static fn (Member $member) => $member->position !== null,
+        ));
     }
 }

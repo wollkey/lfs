@@ -35,7 +35,7 @@ final class AssignPickersCommand extends Command
 
         $usernameByLabel = $this->activeMemberLabels();
         if ($usernameByLabel === []) {
-            $io->error('No active members. Run members:seed first.');
+            $io->error('No active members in the database.');
 
             return Command::FAILURE;
         }

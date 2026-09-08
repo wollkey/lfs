@@ -87,10 +87,6 @@ migrate: init ## Apply pending migrations
 	@$(CONSOLE) migrate
 .PHONY: migrate
 
-seed-members: ## Insert or update the club roster from data/roster.json
-	@$(CONSOLE) members:seed
-.PHONY: seed-members
-
 seed: ## Update the DB from data/: new films, ratings, missing posters
 	@$(CONSOLE) seed $(DIR)
 .PHONY: seed

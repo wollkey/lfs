@@ -42,7 +42,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Active members are numbered in the order given, the way members:seed does it.
+     * Active members are numbered in the order given; position drives the picking rotation.
      */
     protected function givenMembers(string ...$usernames): void
     {
