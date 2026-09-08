@@ -6,10 +6,6 @@ namespace App\Persistence;
 
 final class Connection
 {
-    /**
-     * Open the database for reading and writing. Used locally for migrations,
-     * seeding and rating.
-     */
     public static function open(string $path): \PDO
     {
         $pdo = new \PDO('sqlite:'.$path);
@@ -19,11 +15,6 @@ final class Connection
         return $pdo;
     }
 
-    /**
-     * Open the database read-only for a file on read-only media. Skips locking
-     * and WAL side files, so it works when the database is mounted read-only.
-     * Used on production, where nothing writes to the database.
-     */
     public static function openReadOnly(string $path): \PDO
     {
         $pdo = new \PDO('sqlite:file:'.$path.'?immutable=1&mode=ro');

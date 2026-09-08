@@ -8,7 +8,7 @@ final readonly class Post
 {
     /**
      * @param list<Cell>   $links
-     * @param list<string> $images local image paths; when non-empty the post is a photo message captioned with $intro
+     * @param list<string> $images
      */
     public function __construct(
         public string $title,

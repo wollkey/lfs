@@ -8,10 +8,6 @@ use App\Letterboxd\Dto\ParsedFilm;
 use App\Letterboxd\Exception\NotFoundException;
 use Symfony\Component\DomCrawler\Crawler;
 
-/**
- * A public film page (/film/{slug}/) — readable without a session, unlike the
- * friends and activity pages.
- */
 final class FilmPageParser
 {
     private const string JSON_LD = 'script[type="application/ld+json"]';
@@ -19,7 +15,7 @@ final class FilmPageParser
     private const string SLUG = '~/film/([^/]+)/~';
 
     /**
-     * @throws NotFoundException when the page carries neither a slug nor a title
+     * @throws NotFoundException
      */
     public function parse(string $html): ParsedFilm
     {
@@ -37,8 +33,6 @@ final class FilmPageParser
     }
 
     /**
-     * Malformed JSON must fall through to the meta tags, not abort the parse.
-     *
      * @return array<string, mixed>
      */
     private function jsonLd(Crawler $crawler): array
@@ -48,7 +42,7 @@ final class FilmPageParser
             return [];
         }
 
-        // Raw textContent: Crawler::text() collapses the whitespace inside the JSON strings.
+        // text() would collapse the whitespace inside the JSON strings.
         $json = preg_replace(self::CDATA, '', (string) $script->getNode(0)?->textContent);
         $decoded = json_decode((string) $json, true);
 

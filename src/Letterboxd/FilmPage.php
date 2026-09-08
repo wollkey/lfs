@@ -9,10 +9,6 @@ use App\Letterboxd\Exception\LetterboxdException;
 use App\Letterboxd\Parser\FilmPageParser;
 use App\Letterboxd\Scraper\Downloader;
 
-/**
- * The public film page — readable without a session, unlike the friends and
- * activity pages, so titles and posters need no browser.
- */
 final readonly class FilmPage
 {
     private const string URL = 'https://letterboxd.com/film/%s/';

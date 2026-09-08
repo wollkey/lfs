@@ -7,8 +7,6 @@ namespace App\Statistics;
 final readonly class Overview
 {
     /**
-     * Each record is the whole tie: all entries sharing the top value.
-     *
      * @param RatedFilm[]   $bestFilm
      * @param RatedFilm[]   $worstFilm
      * @param RatedFilm[]   $mostDivisive

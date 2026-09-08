@@ -28,7 +28,7 @@ final readonly class RatingRepository
     }
 
     /**
-     * @return array<string, int> score keyed by "film_slug|member_username"
+     * @return array<string, int>
      */
     public function scores(): array
     {

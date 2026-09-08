@@ -12,10 +12,6 @@ use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-/**
- * `seed` already downloads the posters it is missing; this is the occasional
- * full refresh, for instance after raising the resolution.
- */
 #[AsCommand(
     name: 'posters:fetch',
     description: 'Re-download every film poster into public/posters/.',

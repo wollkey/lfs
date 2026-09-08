@@ -77,7 +77,7 @@ final class AddRatingsCommand extends Command
     }
 
     /**
-     * @return array<string, string> label => username, active members only
+     * @return array<string, string>
      */
     private function activeMemberLabels(): array
     {
@@ -94,7 +94,7 @@ final class AddRatingsCommand extends Command
     }
 
     /**
-     * @return array<string, string> label => slug; identical titles get the slug appended
+     * @return array<string, string>
      */
     private function filmLabels(): array
     {
@@ -118,8 +118,6 @@ final class AddRatingsCommand extends Command
 
     /**
      * @param array<string, string> $slugByLabel
-     *
-     * @return string|null slug of the chosen film, null on empty input (finish)
      */
     private function askFilm(SymfonyStyle $io, array $slugByLabel): ?string
     {

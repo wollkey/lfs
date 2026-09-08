@@ -11,7 +11,7 @@ final class TargetPath
     private const string NAME = '/^[a-z0-9][a-z0-9_-]*$/';
 
     /**
-     * @throws BadRequest on an unknown type or unsafe name
+     * @throws BadRequest
      */
     public static function resolve(string $dataDir, string $type, string $name): string
     {
@@ -27,7 +27,7 @@ final class TargetPath
             default => throw new BadRequest("Unknown ingest type: {$type}."),
         };
 
-        // Untrusted name — whitelist to block path traversal.
+        // Untrusted name: the whitelist blocks path traversal.
         if (preg_match(self::NAME, $name) !== 1) {
             throw new BadRequest("Invalid name: {$name}.");
         }

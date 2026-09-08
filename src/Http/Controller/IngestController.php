@@ -7,9 +7,6 @@ namespace App\Http\Controller;
 use App\Http\BadRequest;
 use App\Http\Controller\Ingest\TargetPath;
 
-/**
- * Dev-only: stores a scraped page as HTML under data/ for `make seed`.
- */
 final readonly class IngestController
 {
     public function __construct(

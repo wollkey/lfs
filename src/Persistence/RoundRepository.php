@@ -106,9 +106,6 @@ final readonly class RoundRepository
         $stmt->execute(['n' => $number]);
     }
 
-    /**
-     * The highest round that actually holds films, not the highest declared round.
-     */
     public function lastRound(): ?int
     {
         $number = $this->pdo->query('SELECT MAX(round_number) FROM round_films')->fetchColumn();
@@ -133,7 +130,7 @@ final readonly class RoundRepository
     }
 
     /**
-     * @return array{round: int, position: int, picker: ?string}|null null when the film has no slot yet
+     * @return array{round: int, position: int, picker: ?string}|null
      */
     public function slotOf(string $filmSlug): ?array
     {
@@ -154,7 +151,7 @@ final readonly class RoundRepository
     }
 
     /**
-     * @return list<string> members who already picked in this round
+     * @return list<string>
      */
     public function pickersIn(int $round): array
     {

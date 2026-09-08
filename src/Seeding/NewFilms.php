@@ -11,10 +11,6 @@ use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
 use App\Persistence\RoundRepository;
 
-/**
- * Films the club has scraped but not recorded yet. The userscript names every
- * saved page after its film, so a page with an unknown slug is a new pick.
- */
 final readonly class NewFilms
 {
     private const string SLUG = '/^[a-z0-9][a-z0-9-]*$/';
@@ -28,8 +24,6 @@ final readonly class NewFilms
     }
 
     /**
-     * Scraped slugs the database does not know, newest scrape first.
-     *
      * @return list<string>
      */
     public function pending(string $htmlDir): array
@@ -52,7 +46,6 @@ final readonly class NewFilms
 
     /**
      * @return array{slug: string, title: string, round: int, position: int, picker: ?string}|null
-     *                                                                                             null when the page is unreachable
      */
     public function add(string $slug, string $pickedOn): ?array
     {
@@ -61,12 +54,11 @@ final readonly class NewFilms
             return null;
         }
 
-        // file_get_contents follows /film/drive/ to /film/drive-2011/ silently.
+        // The page may have redirected to a canonical slug.
         $slug = $film->slug;
 
         $this->films->save(new Film($slug, $film->title));
 
-        // Keep whatever the film already has; only a fresh slot takes the next turn.
         $slot = $this->rounds->slotOf($slug) ?? $this->nextSlot();
 
         $this->rounds->ensure($slot['round']);
@@ -76,8 +68,6 @@ final readonly class NewFilms
     }
 
     /**
-     * A round holds one pick per member in the rotation.
-     *
      * @return array{round: int, position: int, picker: ?string}
      */
     private function nextSlot(): array
@@ -94,9 +84,6 @@ final readonly class NewFilms
         ];
     }
 
-    /**
-     * The member whose turn has not come round yet.
-     */
     private function nextPicker(int $round): ?string
     {
         $taken = array_flip($this->rounds->pickersIn($round));
@@ -111,9 +98,6 @@ final readonly class NewFilms
     }
 
     /**
-     * Active members in picking order. Clearing a member's position takes them
-     * out of the rotation — and out of the round size — until it is restored.
-     *
      * @return list<Member>
      */
     private function rotation(): array

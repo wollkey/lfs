@@ -14,9 +14,6 @@ final class FriendsRatingsParser
     private const string RATING = 'td.col-rating span.rating';
 
     /**
-     * Friends' ratings for one film. Rows without a rating (watched but
-     * not rated) are skipped.
-     *
      * @return list<ParsedRating>
      */
     public function parse(string $html): array

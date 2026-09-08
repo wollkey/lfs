@@ -41,9 +41,6 @@ abstract class IntegrationTestCase extends TestCase
         return new Statistics($this->pdo, $quorum);
     }
 
-    /**
-     * Active members are numbered in the order given; position drives the picking rotation.
-     */
     protected function givenMembers(string ...$usernames): void
     {
         foreach ($usernames as $i => $username) {
@@ -65,7 +62,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * @param array<string,int> $scores username => score
+     * @param array<string,int> $scores
      */
     protected function givenFilmRatedBy(string $slug, array $scores): void
     {

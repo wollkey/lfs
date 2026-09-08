@@ -15,8 +15,6 @@ final class ListParser
     private const string OWNER = 'body.list-page';
 
     /**
-     * Films in the list (slug + title only).
-     *
      * @return list<ParsedFilm>
      */
     public function parse(string $html): array
@@ -29,12 +27,7 @@ final class ListParser
     }
 
     /**
-     * The list owner's own ratings, one ParsedRating per rated film.
-     * The owner is the same kind of member as everyone else; their
-     * rating just happens to live on the list page rather than the
-     * friends page.
-     *
-     * @return array<string, ParsedRating> keyed by film slug
+     * @return array<string, ParsedRating>
      */
     public function ownerRatings(string $html): array
     {

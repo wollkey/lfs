@@ -43,10 +43,6 @@ final class ActivityParserTest extends TestCase
         self::assertSame(4, $ratings['taxi-driver']);
     }
 
-    /**
-     * The logged-in member's own fragment says "You rated" (no name link) and
-     * uses relative film hrefs. The slug and score must still be extracted.
-     */
     public function testParsesOwnRowsWithoutNameLink(): void
     {
         $html = <<<'HTML'

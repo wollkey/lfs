@@ -12,11 +12,6 @@ use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
 use App\Persistence\RatingRepository;
 
-/**
- * Every rating the club has scraped, from whichever pages happen to be on disk.
- * Films come from the database, so a film added this week is picked up without
- * re-capturing the list page, and re-scraping an old film updates its scores.
- */
 final readonly class ScrapedRatings
 {
     public function __construct(
@@ -58,16 +53,15 @@ final readonly class ScrapedRatings
     }
 
     /**
-     * Activity is scraped later than the friends pages, so it wins on conflicts.
-     *
      * @param array<string, int> $known
      * @param array<string, int> $roster
      * @param list<string>       $skipped
      *
-     * @return array<string, int> score keyed by "slug|username"
+     * @return array<string, int>
      */
     private function scraped(string $htmlDir, array $known, array $roster, array &$skipped): array
     {
+        // Later sources overwrite earlier ones; activity is the freshest.
         return [
             ...$this->fromList($htmlDir, $known, $roster, $skipped),
             ...$this->fromFriends($htmlDir, $known, $roster, $skipped),
@@ -158,7 +152,6 @@ final readonly class ScrapedRatings
             return false;
         }
 
-        // Writing a non-member would violate the foreign key and abort the run.
         if (!isset($roster[$username])) {
             $skipped[] = $username;
 

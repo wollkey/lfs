@@ -6,9 +6,6 @@ namespace App\Letterboxd;
 
 use App\Letterboxd\Scraper\Downloader;
 
-/**
- * The poster files served from public/posters, one JPEG per film slug.
- */
 final readonly class Posters
 {
     private const int WIDTH = 1000;
@@ -27,9 +24,6 @@ final readonly class Posters
         return is_file($this->path($slug));
     }
 
-    /**
-     * Downloads the poster at full resolution. Returns false when nothing was written.
-     */
     public function fetch(string $slug, string $url): bool
     {
         if (!is_dir($this->dir) && !mkdir($this->dir, 0o775, true) && !is_dir($this->dir)) {
@@ -42,7 +36,6 @@ final readonly class Posters
             return false;
         }
 
-        // Write aside and swap: a truncated poster would be synced to production as is.
         $target = $this->path($slug);
         $temp = $target.'.tmp';
 

@@ -13,15 +13,7 @@ final class ActivityParser
     private const string RATING = 'p.activity-summary span.rating';
 
     /**
-     * Ratings from an activity-pagination fragment
-     * (/ajax/activity-pagination/{username}/). The member is not identifiable
-     * from the markup — a friend's rows carry their name but the logged-in
-     * member's own rows read "You rated" — so the caller supplies the username
-     * from the file name. Non-rating events (followed, watched, liked, reviewed
-     * without a score) are skipped. Activity is reverse-chronological, so the
-     * first occurrence of a slug is the most recent rating and wins.
-     *
-     * @return array<string, int> score keyed by film slug
+     * @return array<string, int>
      */
     public function parse(string $html): array
     {
@@ -33,6 +25,7 @@ final class ActivityParser
             $slug = $this->slug($row);
             $score = $this->score($row);
 
+            // Reverse-chronological: the first occurrence is the newest rating.
             if ($slug !== null && $score !== null && !isset($ratings[$slug])) {
                 $ratings[$slug] = $score;
             }

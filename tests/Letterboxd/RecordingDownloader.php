@@ -14,7 +14,7 @@ final class RecordingDownloader implements Downloader
     public array $requested = [];
 
     /**
-     * @param array<string, ?string> $responses body keyed by a substring of the URL
+     * @param array<string, ?string> $responses
      */
     public function __construct(
         private readonly array $responses,

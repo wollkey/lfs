@@ -79,9 +79,6 @@ final readonly class Statistics
     }
 
     /**
-     * Films an active member has not rated. Each ListedFilm keeps its round,
-     * so the frontend can group them by round.
-     *
      * @return array<string, ListedFilm[]>
      */
     public function missedByMember(): array
@@ -125,9 +122,6 @@ final readonly class Statistics
     }
 
     /**
-     * Films each member has picked, with their average. Former members are
-     * kept — their picks are still club films.
-     *
      * @return array<string, ListedFilm[]>
      */
     public function picksByMember(): array
@@ -344,10 +338,6 @@ final readonly class Statistics
         );
     }
 
-    /**
-     * The most recently watched film (by picked_on) that reached quorum, with its
-     * full rating breakdown. Spans all rounds so it bridges the gap between rounds.
-     */
     public function latestRatedFilm(): ?FilmDetail
     {
         $latest = null;
@@ -384,9 +374,6 @@ final readonly class Statistics
     }
 
     /**
-     * Every film that reached the quorum, with all its metrics.
-     * stdDev is computed in PHP — SQLite has no STDDEV.
-     *
      * @return RatedFilm[]
      */
     private function ratedFilms(): array
@@ -504,8 +491,6 @@ final readonly class Statistics
     }
 
     /**
-     * All films sharing the extreme value of $metric — the whole tie, not one.
-     *
      * @param RatedFilm[]                $films
      * @param callable(RatedFilm): float $metric
      *
@@ -541,8 +526,6 @@ final readonly class Statistics
     }
 
     /**
-     * All active members sharing the highest watch count — the whole tie.
-     *
      * @param MemberStats[] $members
      *
      * @return MemberStats[]
@@ -555,8 +538,6 @@ final readonly class Statistics
     }
 
     /**
-     * All qualified curators sharing the highest average — the whole tie.
-     *
      * @param MemberStats[] $members
      *
      * @return MemberStats[]
@@ -572,8 +553,6 @@ final readonly class Statistics
     }
 
     /**
-     * All members sharing the highest value of $metric — the whole tie, not one.
-     *
      * @param MemberStats[]                $members
      * @param callable(MemberStats): float $metric
      *
@@ -718,9 +697,6 @@ final readonly class Statistics
     }
 
     /**
-     * Curator statistics: the average OF AVERAGES over picks that reached the quorum.
-     * Every pick weighs the same — how well a single bet lands on average.
-     *
      * @return array<string, array{picks: int, average: float}>
      */
     private function curatorStats(): array

@@ -72,7 +72,7 @@ final class AssignPickersCommand extends Command
     }
 
     /**
-     * @return array<string, string> label => username, active members only
+     * @return array<string, string>
      */
     private function activeMemberLabels(): array
     {

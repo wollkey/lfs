@@ -54,9 +54,6 @@ final class SeedCommand extends Command
         return Command::SUCCESS;
     }
 
-    /**
-     * Optional: the list page only refreshes titles now, the round structure lives in the DB.
-     */
     private function seedTitles(string $htmlDir): void
     {
         $file = "{$htmlDir}/list.html";

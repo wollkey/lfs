@@ -141,7 +141,6 @@ final class SeedCommandTest extends IntegrationTestCase
 
         $this->tester()->execute(['html-dir' => $this->htmlDir]);
 
-        // Both members in the rotation have picked, so the round is full at two.
         self::assertSame([7, 1, 'lenka', date('Y-m-d')], $this->slot('drive-2011'));
     }
 

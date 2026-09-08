@@ -13,7 +13,7 @@ final readonly class Migrator
     }
 
     /**
-     * @return string[] versions applied in this run
+     * @return string[]
      */
     public function migrate(): array
     {
@@ -48,7 +48,7 @@ final readonly class Migrator
     /**
      * @param string[] $applied
      *
-     * @return array<string,string> version => path
+     * @return array<string,string>
      */
     private function pending(array $applied): array
     {
