@@ -144,6 +144,19 @@ final class SeedCommandTest extends IntegrationTestCase
         self::assertSame([7, 1, 'lenka', date('Y-m-d')], $this->slot('drive-2011'));
     }
 
+    public function testPlacesAFilmThatTheListPageAlreadyInsertedIntoFilms(): void
+    {
+        $this->givenMembers('wollkey', 'lenka');
+        $this->givenRoundFilm(6, 'city-lights', 1, 'wollkey');
+        $this->givenPoster('city-lights');
+        $this->givenFriendsPage('drive-2011');
+        $this->films->save(new Film('drive-2011', 'Drive'));
+
+        $this->tester()->execute(['html-dir' => $this->htmlDir]);
+
+        self::assertSame([6, 2, 'lenka', date('Y-m-d')], $this->slot('drive-2011'));
+    }
+
     public function testImportsRatingsFromFriendsAndActivity(): void
     {
         $this->givenMembers('atomic_rage', 'vika');

@@ -28,7 +28,7 @@ final readonly class NewFilms
      */
     public function pending(string $htmlDir): array
     {
-        $known = array_flip($this->films->slugs());
+        $placed = array_flip($this->rounds->placedFilms());
 
         $files = glob("{$htmlDir}/friends/*.html") ?: [];
         usort($files, static fn (string $a, string $b) => filemtime($b) <=> filemtime($a));
@@ -36,7 +36,7 @@ final readonly class NewFilms
         $pending = [];
         foreach ($files as $file) {
             $slug = basename($file, '.html');
-            if (!isset($known[$slug]) && preg_match(self::SLUG, $slug) === 1) {
+            if (!isset($placed[$slug]) && preg_match(self::SLUG, $slug) === 1) {
                 $pending[] = $slug;
             }
         }

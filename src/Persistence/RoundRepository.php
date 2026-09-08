@@ -153,6 +153,17 @@ final readonly class RoundRepository
     /**
      * @return list<string>
      */
+    public function placedFilms(): array
+    {
+        return array_map(
+            static fn (array $row) => (string) $row['film_slug'],
+            $this->pdo->query('SELECT DISTINCT film_slug FROM round_films')->fetchAll(),
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
     public function pickersIn(int $round): array
     {
         $stmt = $this->pdo->prepare(
