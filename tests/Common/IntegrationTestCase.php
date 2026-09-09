@@ -52,8 +52,9 @@ abstract class IntegrationTestCase extends TestCase
         string $username,
         MemberStatus $status = MemberStatus::Active,
         ?int $position = null,
+        ?string $displayName = null,
     ): void {
-        $this->members->save(new Member($username, ucfirst($username), $status, $position));
+        $this->members->save(new Member($username, $displayName ?? ucfirst($username), $status, $position));
     }
 
     protected function givenRound(int $number, ?string $startedOn = null, ?string $endedOn = null): void

@@ -9,6 +9,7 @@ use App\Console\AddRatingsCommand;
 use App\Console\AssignPickersCommand;
 use App\Console\FetchPostersCommand;
 use App\Console\MigrateCommand;
+use App\Console\MoveMemberCommand;
 use App\Console\PostFlashbackCommand;
 use App\Console\PostHighlightCommand;
 use App\Console\PostRoundStandingsCommand;
@@ -84,6 +85,7 @@ $app->addCommand(new SeedCommand($listParser, $newFilms, $scrapedRatings, $filmP
 $app->addCommand(new FetchPostersCommand($filmPage, $posters, $films));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
+$app->addCommand(new MoveMemberCommand($members));
 $app->addCommand(new PostRoundStandingsCommand(
     $messages,
     $standingsCard,

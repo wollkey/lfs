@@ -39,7 +39,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
         $this->givenPoster('oldie');
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client))->execute([]);
+        $exit = $this->console($this->command($client))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertCount(1, $client->photos);
@@ -52,7 +52,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
         $this->seedFlashback();
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client))->execute([]);
+        $exit = $this->console($this->command($client))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->photos);
@@ -63,7 +63,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
     {
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client))->execute([]);
+        $exit = $this->console($this->command($client))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->photos);
@@ -76,7 +76,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
         $this->givenPoster('oldie');
         $client = new RecordingTelegramClient(fail: true);
 
-        self::assertSame(Command::FAILURE, $this->tester($this->command($client))->execute([]));
+        self::assertSame(Command::FAILURE, $this->console($this->command($client))->execute([]));
     }
 
     public function testReturnsInvalidWhenUnconfigured(): void
@@ -85,16 +85,16 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
         $this->givenPoster('oldie');
         $command = new PostFlashbackCommand($this->messages(), new MicroPoster(null, null));
 
-        self::assertSame(Command::INVALID, $this->tester($command)->execute([]));
+        self::assertSame(Command::INVALID, $this->console($command)->execute([]));
     }
 
     private function seedFlashback(): void
     {
         $monday = new \DateTimeImmutable('-1 year')->modify('monday this week')->format('Y-m-d');
-        $this->givenMembers('anna', 'boris');
+        $this->givenMembers('al1vka', 'christallisme');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('oldie', ['anna' => 8, 'boris' => 7]);
-        $this->rounds->addFilm(1, 'oldie', 'anna', 1, $monday);
+        $this->givenFilmRatedBy('oldie', ['al1vka' => 8, 'christallisme' => 7]);
+        $this->rounds->addFilm(1, 'oldie', 'al1vka', 1, $monday);
     }
 
     private function givenPoster(string $slug): void
@@ -112,7 +112,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
         return new PostFlashbackCommand($this->messages(), new MicroPoster($client, '-100500'));
     }
 
-    private function tester(PostFlashbackCommand $command): CommandTester
+    private function console(PostFlashbackCommand $command): CommandTester
     {
         $application = new Application();
         $application->addCommand($command);

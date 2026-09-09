@@ -16,16 +16,16 @@ final class StatisticsTest extends IntegrationTestCase
 {
     public function testFilmsPickedBetweenReturnsFilmsWithinTheInclusiveWindow(): void
     {
-        $this->givenMembers('anna');
+        $this->givenMembers('al1vka');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('before', ['anna' => 5]);
-        $this->givenFilmRatedBy('start', ['anna' => 6]);
-        $this->givenFilmRatedBy('end', ['anna' => 7]);
-        $this->givenFilmRatedBy('after', ['anna' => 8]);
-        $this->rounds->addFilm(1, 'before', 'anna', 1, '2025-08-03');
-        $this->rounds->addFilm(1, 'start', 'anna', 2, '2025-08-04');
-        $this->rounds->addFilm(1, 'end', 'anna', 3, '2025-08-10');
-        $this->rounds->addFilm(1, 'after', 'anna', 4, '2025-08-11');
+        $this->givenFilmRatedBy('before', ['al1vka' => 5]);
+        $this->givenFilmRatedBy('start', ['al1vka' => 6]);
+        $this->givenFilmRatedBy('end', ['al1vka' => 7]);
+        $this->givenFilmRatedBy('after', ['al1vka' => 8]);
+        $this->rounds->addFilm(1, 'before', 'al1vka', 1, '2025-08-03');
+        $this->rounds->addFilm(1, 'start', 'al1vka', 2, '2025-08-04');
+        $this->rounds->addFilm(1, 'end', 'al1vka', 3, '2025-08-10');
+        $this->rounds->addFilm(1, 'after', 'al1vka', 4, '2025-08-11');
 
         $films = $this->statistics(quorum: 1)->filmsPickedBetween('2025-08-04', '2025-08-10');
 
@@ -35,12 +35,12 @@ final class StatisticsTest extends IntegrationTestCase
 
     public function testLatestRatedFilmPicksTheNewestFilmThatReachedQuorum(): void
     {
-        $this->givenMembers('anna', 'boris');
+        $this->givenMembers('al1vka', 'christallisme');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('qualified', ['anna' => 6, 'boris' => 8]);
-        $this->givenFilmRatedBy('newest', ['anna' => 7]);
-        $this->rounds->addFilm(1, 'qualified', 'anna', 1, '2026-02-02');
-        $this->rounds->addFilm(1, 'newest', 'boris', 2, '2026-02-09');
+        $this->givenFilmRatedBy('qualified', ['al1vka' => 6, 'christallisme' => 8]);
+        $this->givenFilmRatedBy('newest', ['al1vka' => 7]);
+        $this->rounds->addFilm(1, 'qualified', 'al1vka', 1, '2026-02-02');
+        $this->rounds->addFilm(1, 'newest', 'christallisme', 2, '2026-02-09');
 
         $film = $this->statistics(quorum: 2)->latestRatedFilm();
 
@@ -49,8 +49,8 @@ final class StatisticsTest extends IntegrationTestCase
 
     public function testBestFilmIgnoresFilmsBelowQuorum(): void
     {
-        $this->givenMembers('wollkey', 'lenka', 'vika');
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
+        $this->givenMembers('wollkey', 'lenka_penka', 'vika');
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 8, 'vika' => 9]);
         $this->givenFilmRatedBy('solaris', ['wollkey' => 10]);
 
         $best = $this->statistics(quorum: 2)->overview()->bestFilm;
@@ -60,9 +60,9 @@ final class StatisticsTest extends IntegrationTestCase
 
     public function testWorstFilmRespectsQuorum(): void
     {
-        $this->givenMembers('wollkey', 'lenka', 'vika');
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
-        $this->givenFilmRatedBy('morbius', ['wollkey' => 3, 'lenka' => 4, 'vika' => 3]);
+        $this->givenMembers('wollkey', 'lenka_penka', 'vika');
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 8, 'vika' => 9]);
+        $this->givenFilmRatedBy('morbius', ['wollkey' => 3, 'lenka_penka' => 4, 'vika' => 3]);
         $this->givenFilmRatedBy('flop', ['wollkey' => 1]);
 
         $worst = $this->statistics(quorum: 2)->overview()->worstFilm;
@@ -72,9 +72,9 @@ final class StatisticsTest extends IntegrationTestCase
 
     public function testMostDivisiveFilmHasLargestSpread(): void
     {
-        $this->givenMembers('wollkey', 'lenka', 'vika');
-        $this->givenFilmRatedBy('mother', ['wollkey' => 2, 'lenka' => 9, 'vika' => 5]);
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
+        $this->givenMembers('wollkey', 'lenka_penka', 'vika');
+        $this->givenFilmRatedBy('mother', ['wollkey' => 2, 'lenka_penka' => 9, 'vika' => 5]);
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 8, 'vika' => 9]);
 
         $divisive = $this->statistics(quorum: 2)->overview()->mostDivisive;
 
@@ -108,9 +108,9 @@ final class StatisticsTest extends IntegrationTestCase
 
     public function testFilmListWithRatingsGroupsScoresPerFilm(): void
     {
-        $this->givenMembers('wollkey', 'lenka', 'vika');
+        $this->givenMembers('wollkey', 'lenka_penka', 'vika');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 8, 'vika' => 9]);
         $this->rounds->addFilm(1, 'stalker', 'wollkey', 1, '2025-01-06');
 
         $films = $this->indexBySlug($this->statistics()->films(withRatings: true));
@@ -147,22 +147,22 @@ final class StatisticsTest extends IntegrationTestCase
 
     public function testMemberWithoutRatingsHasZeroWatchedAndNullAverage(): void
     {
-        $this->givenMembers('newbie');
+        $this->givenMembers('vans_von_trier');
 
         $members = $this->indexByUsername($this->statistics()->membersWithStats());
 
-        self::assertSame(0, $members['newbie']->watched);
-        self::assertNull($members['newbie']->averageGiven);   // LEFT JOIN => no ratings => null
+        self::assertSame(0, $members['vans_von_trier']->watched);
+        self::assertNull($members['vans_von_trier']->averageGiven);   // LEFT JOIN => no ratings => null
     }
 
     public function testRoundWinnerIsFilmWithHighestAverage(): void
     {
-        $this->givenMembers('wollkey', 'lenka', 'vika');
+        $this->givenMembers('wollkey', 'lenka_penka', 'vika');
         $this->givenRound(1, '2024-01-05', '2024-03-10');
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8, 'vika' => 9]);
-        $this->givenFilmRatedBy('mother', ['wollkey' => 2, 'lenka' => 9, 'vika' => 5]);
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 8, 'vika' => 9]);
+        $this->givenFilmRatedBy('mother', ['wollkey' => 2, 'lenka_penka' => 9, 'vika' => 5]);
         $this->rounds->addFilm(1, 'stalker', 'wollkey', 1, '2025-01-06');
-        $this->rounds->addFilm(1, 'mother', 'lenka', 2, '2025-01-13');
+        $this->rounds->addFilm(1, 'mother', 'lenka_penka', 2, '2025-01-13');
 
         $rounds = $this->statistics(quorum: 2)->rounds();
 

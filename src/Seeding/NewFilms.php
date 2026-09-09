@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Seeding;
 
 use App\Domain\Film;
-use App\Domain\Member;
 use App\Letterboxd\FilmPage;
 use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
@@ -73,7 +72,7 @@ final readonly class NewFilms
     private function nextSlot(): array
     {
         $last = $this->rounds->lastRound() ?? 1;
-        $full = $this->rounds->filmCount($last) >= count($this->rotation());
+        $full = $this->rounds->filmCount($last) >= count($this->members->rotation());
 
         $round = $full ? $last + 1 : $last;
 
@@ -88,23 +87,12 @@ final readonly class NewFilms
     {
         $taken = array_flip($this->rounds->pickersIn($round));
 
-        foreach ($this->rotation() as $member) {
+        foreach ($this->members->rotation() as $member) {
             if (!isset($taken[$member->username])) {
                 return $member->username;
             }
         }
 
         return null;
-    }
-
-    /**
-     * @return list<Member>
-     */
-    private function rotation(): array
-    {
-        return array_values(array_filter(
-            $this->members->active(),
-            static fn (Member $member) => $member->position !== null,
-        ));
     }
 }

@@ -25,7 +25,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
         $this->seedRound();
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client, new FakeRasterizer()))->execute([]);
+        $exit = $this->console($this->command($client, new FakeRasterizer()))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->sent);
@@ -40,7 +40,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
         $this->seedRound();
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client, new FakeRasterizer()))->execute(['round' => 1]);
+        $exit = $this->console($this->command($client, new FakeRasterizer()))->execute(['round' => 1]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertCount(1, $client->albums);
@@ -50,7 +50,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
     {
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client, new FakeRasterizer()))->execute([]);
+        $exit = $this->console($this->command($client, new FakeRasterizer()))->execute([]);
 
         self::assertSame(Command::INVALID, $exit);
         self::assertSame([], $client->albums);
@@ -70,7 +70,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
             null,
         );
 
-        self::assertSame(Command::INVALID, $this->tester($command)->execute([]));
+        self::assertSame(Command::INVALID, $this->console($command)->execute([]));
     }
 
     public function testReturnsFailureWhenTelegramErrors(): void
@@ -78,7 +78,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
         $this->seedRound();
         $client = new RecordingTelegramClient(fail: true);
 
-        self::assertSame(Command::FAILURE, $this->tester($this->command($client, new FakeRasterizer()))->execute([]));
+        self::assertSame(Command::FAILURE, $this->console($this->command($client, new FakeRasterizer()))->execute([]));
     }
 
     public function testDryRunDoesNotSend(): void
@@ -86,7 +86,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
         $this->seedRound();
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client, new FakeRasterizer()))->execute(['--dry-run' => true]);
+        $exit = $this->console($this->command($client, new FakeRasterizer()))->execute(['--dry-run' => true]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->sent);
@@ -95,12 +95,12 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
 
     private function seedRound(): void
     {
-        $this->givenMembers('wollkey', 'lenka');
+        $this->givenMembers('wollkey', 'lenka_penka');
         $this->givenRound(1, '2025-01-06', '2025-03-10');
-        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka' => 8]);
-        $this->givenFilmRatedBy('mother', ['wollkey' => 3, 'lenka' => 5]);
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 8]);
+        $this->givenFilmRatedBy('mother', ['wollkey' => 3, 'lenka_penka' => 5]);
         $this->rounds->addFilm(1, 'stalker', 'wollkey', 1, '2025-01-06');
-        $this->rounds->addFilm(1, 'mother', 'lenka', 2, '2025-01-13');
+        $this->rounds->addFilm(1, 'mother', 'lenka_penka', 2, '2025-01-13');
     }
 
     private function command(RecordingTelegramClient $client, Rasterizer $rasterizer): PostRoundSummaryCommand
@@ -116,7 +116,7 @@ final class PostRoundSummaryCommandTest extends IntegrationTestCase
         );
     }
 
-    private function tester(PostRoundSummaryCommand $command): CommandTester
+    private function console(PostRoundSummaryCommand $command): CommandTester
     {
         $application = new Application();
         $application->addCommand($command);

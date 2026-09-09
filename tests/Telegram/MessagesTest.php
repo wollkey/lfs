@@ -83,13 +83,13 @@ final class MessagesTest extends IntegrationTestCase
 
     public function testCurrentRoundStandingsCoversTheLatestRoundSortedByAverage(): void
     {
-        $this->givenMembers('wollkey', 'lenka');
+        $this->givenMembers('wollkey', 'lenka_penka');
         $this->givenRound(1);
         $this->givenRound(2);
-        $this->givenFilmRatedBy('low', ['wollkey' => 4, 'lenka' => 6]);
-        $this->givenFilmRatedBy('high', ['wollkey' => 9, 'lenka' => 9]);
+        $this->givenFilmRatedBy('low', ['wollkey' => 4, 'lenka_penka' => 6]);
+        $this->givenFilmRatedBy('high', ['wollkey' => 9, 'lenka_penka' => 9]);
         $this->rounds->addFilm(2, 'low', 'wollkey', 1, '2025-06-30');
-        $this->rounds->addFilm(2, 'high', 'lenka', 2, '2025-07-07');
+        $this->rounds->addFilm(2, 'high', 'lenka_penka', 2, '2025-07-07');
 
         $post = $this->messages()->currentRoundStandings();
 
@@ -135,7 +135,7 @@ final class MessagesTest extends IntegrationTestCase
 
         $memberAwards = $this->messages()->roundSummary(1)['cards'][2];
 
-        self::assertSame('Anna, Boris', $memberAwards->table->rows[0][1]->text);
+        self::assertSame('Al1vka, Christallisme', $memberAwards->table->rows[0][1]->text);
     }
 
     public function testRoundSummaryFallsBackWhenTheRoundIsEmpty(): void
@@ -148,10 +148,10 @@ final class MessagesTest extends IntegrationTestCase
 
     public function testFlashbackSurfacesFilmsPickedAYearAgoThisWeek(): void
     {
-        $this->givenMembers('anna', 'boris');
+        $this->givenMembers('al1vka', 'christallisme');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('oldie', ['anna' => 8, 'boris' => 7]);
-        $this->rounds->addFilm(1, 'oldie', 'anna', 1, '2025-08-04');
+        $this->givenFilmRatedBy('oldie', ['al1vka' => 8, 'christallisme' => 7]);
+        $this->rounds->addFilm(1, 'oldie', 'al1vka', 1, '2025-08-04');
 
         $post = $this->messages()->flashback(new \DateTimeImmutable('2026-08-06'));
 
@@ -163,22 +163,22 @@ final class MessagesTest extends IntegrationTestCase
 
     public function testFlashbackReturnsNullWhenNothingWatchedThatWeek(): void
     {
-        $this->givenMembers('anna');
+        $this->givenMembers('al1vka');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('oldie', ['anna' => 8]);
-        $this->rounds->addFilm(1, 'oldie', 'anna', 1, '2025-08-04');
+        $this->givenFilmRatedBy('oldie', ['al1vka' => 8]);
+        $this->rounds->addFilm(1, 'oldie', 'al1vka', 1, '2025-08-04');
 
         self::assertNull($this->messages()->flashback(new \DateTimeImmutable('2026-12-01')));
     }
 
     public function testWeeklyHighlightSpotlightsTheLatestRatedFilm(): void
     {
-        $this->givenMembers('anna', 'boris', 'clara');
+        $this->givenMembers('al1vka', 'christallisme', 'koshmarus');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('older', ['anna' => 5, 'boris' => 6]);
-        $this->givenFilmRatedBy('newer', ['anna' => 3, 'boris' => 9, 'clara' => 6]);
-        $this->rounds->addFilm(1, 'older', 'anna', 1, '2026-01-06');
-        $this->rounds->addFilm(1, 'newer', 'boris', 2, '2026-01-13');
+        $this->givenFilmRatedBy('older', ['al1vka' => 5, 'christallisme' => 6]);
+        $this->givenFilmRatedBy('newer', ['al1vka' => 3, 'christallisme' => 9, 'koshmarus' => 6]);
+        $this->rounds->addFilm(1, 'older', 'al1vka', 1, '2026-01-06');
+        $this->rounds->addFilm(1, 'newer', 'christallisme', 2, '2026-01-13');
 
         $post = $this->messages()->weeklyHighlight();
 
@@ -186,30 +186,30 @@ final class MessagesTest extends IntegrationTestCase
         self::assertSame(['/posters/newer.jpg'], $post->images);
         self::assertStringContainsString('Последний кадр', (string) $post->intro);
         self::assertStringContainsString('<b><a href="https://lfs.wollkey.ru/films/newer">Newer</a></b>', (string) $post->intro);
-        self::assertStringContainsString('Высшая оценка: Boris (9)', (string) $post->intro);
-        self::assertStringContainsString('Низшая оценка: Anna (3)', (string) $post->intro);
+        self::assertStringContainsString('Высшая оценка: Christallisme (9)', (string) $post->intro);
+        self::assertStringContainsString('Низшая оценка: Al1vka (3)', (string) $post->intro);
     }
 
     public function testWeeklyHighlightListsAllTiedTopAndBottomVoters(): void
     {
-        $this->givenMembers('anna', 'boris', 'clara', 'dima');
+        $this->givenMembers('al1vka', 'christallisme', 'koshmarus', 'nickbiryukov');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('film', ['anna' => 9, 'boris' => 9, 'clara' => 4, 'dima' => 4]);
-        $this->rounds->addFilm(1, 'film', 'anna', 1, '2026-03-02');
+        $this->givenFilmRatedBy('film', ['al1vka' => 9, 'christallisme' => 9, 'koshmarus' => 4, 'nickbiryukov' => 4]);
+        $this->rounds->addFilm(1, 'film', 'al1vka', 1, '2026-03-02');
 
         $post = $this->messages()->weeklyHighlight();
 
         self::assertNotNull($post);
-        self::assertStringContainsString('Высшая оценка: Anna, Boris (9)', (string) $post->intro);
-        self::assertStringContainsString('Низшая оценка: Clara, Dima (4)', (string) $post->intro);
+        self::assertStringContainsString('Высшая оценка: Al1vka, Christallisme (9)', (string) $post->intro);
+        self::assertStringContainsString('Низшая оценка: Koshmarus, Nickbiryukov (4)', (string) $post->intro);
     }
 
     public function testWeeklyHighlightCollapsesToUnanimousWhenEveryoneAgrees(): void
     {
-        $this->givenMembers('anna', 'boris');
+        $this->givenMembers('al1vka', 'christallisme');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('film', ['anna' => 8, 'boris' => 8]);
-        $this->rounds->addFilm(1, 'film', 'anna', 1, '2026-03-02');
+        $this->givenFilmRatedBy('film', ['al1vka' => 8, 'christallisme' => 8]);
+        $this->rounds->addFilm(1, 'film', 'al1vka', 1, '2026-03-02');
 
         $post = $this->messages()->weeklyHighlight();
 
@@ -224,12 +224,12 @@ final class MessagesTest extends IntegrationTestCase
 
     private function seedSummaryRound(): void
     {
-        $this->givenMembers('anna', 'boris', 'clara');
+        $this->givenMembers('al1vka', 'christallisme', 'koshmarus');
         $this->givenRound(1, '2025-01-06', '2025-03-10');
-        $this->givenFilmRatedBy('unity', ['anna' => 8, 'boris' => 8, 'clara' => 8]);
-        $this->givenFilmRatedBy('flop', ['anna' => 2, 'boris' => 2]);
-        $this->rounds->addFilm(1, 'unity', 'anna', 1, '2025-01-06');
-        $this->rounds->addFilm(1, 'flop', 'boris', 2, '2025-01-13');
+        $this->givenFilmRatedBy('unity', ['al1vka' => 8, 'christallisme' => 8, 'koshmarus' => 8]);
+        $this->givenFilmRatedBy('flop', ['al1vka' => 2, 'christallisme' => 2]);
+        $this->rounds->addFilm(1, 'unity', 'al1vka', 1, '2025-01-06');
+        $this->rounds->addFilm(1, 'flop', 'christallisme', 2, '2025-01-13');
     }
 
     private function messages(): Messages

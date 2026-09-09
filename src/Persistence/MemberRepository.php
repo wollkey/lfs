@@ -58,6 +58,39 @@ final readonly class MemberRepository
     }
 
     /**
+     * The picking rotation: active members who hold a place in the queue, in turn order.
+     *
+     * @return list<Member>
+     */
+    public function rotation(): array
+    {
+        return array_map(
+            static fn (array $r) => new Member($r['username'], $r['display_name'], MemberStatus::Active, (int) $r['position']),
+            $this->pdo->query(<<<SQL
+                    SELECT username, display_name, position FROM members
+                    WHERE status = 'active' AND position IS NOT NULL
+                    ORDER BY position, display_name
+                SQL)->fetchAll(),
+        );
+    }
+
+    /**
+     * Renumber the queue: the given usernames take places 1..N, in that order.
+     *
+     * @param list<string> $usernames
+     */
+    public function reposition(array $usernames): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE members SET position = :position WHERE username = :username');
+
+        $this->pdo->beginTransaction();
+        foreach ($usernames as $i => $username) {
+            $stmt->execute(['position' => $i + 1, 'username' => $username]);
+        }
+        $this->pdo->commit();
+    }
+
+    /**
      * @return Member[]
      */
     public function all(): array

@@ -38,7 +38,7 @@ final class PostHighlightCommandTest extends IntegrationTestCase
         $this->givenPoster('latest');
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client))->execute([]);
+        $exit = $this->console($this->command($client))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertCount(1, $client->photos);
@@ -49,7 +49,7 @@ final class PostHighlightCommandTest extends IntegrationTestCase
     {
         $client = new RecordingTelegramClient();
 
-        $exit = $this->tester($this->command($client))->execute([]);
+        $exit = $this->console($this->command($client))->execute([]);
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->photos);
@@ -58,12 +58,12 @@ final class PostHighlightCommandTest extends IntegrationTestCase
 
     private function seedRound(): void
     {
-        $this->givenMembers('anna', 'boris');
+        $this->givenMembers('al1vka', 'christallisme');
         $this->givenRound(1);
-        $this->givenFilmRatedBy('older', ['anna' => 5, 'boris' => 6]);
-        $this->givenFilmRatedBy('latest', ['anna' => 4, 'boris' => 9]);
-        $this->rounds->addFilm(1, 'older', 'anna', 1, '2026-01-06');
-        $this->rounds->addFilm(1, 'latest', 'boris', 2, '2026-01-13');
+        $this->givenFilmRatedBy('older', ['al1vka' => 5, 'christallisme' => 6]);
+        $this->givenFilmRatedBy('latest', ['al1vka' => 4, 'christallisme' => 9]);
+        $this->rounds->addFilm(1, 'older', 'al1vka', 1, '2026-01-06');
+        $this->rounds->addFilm(1, 'latest', 'christallisme', 2, '2026-01-13');
     }
 
     private function givenPoster(string $slug): void
@@ -79,7 +79,7 @@ final class PostHighlightCommandTest extends IntegrationTestCase
         );
     }
 
-    private function tester(PostHighlightCommand $command): CommandTester
+    private function console(PostHighlightCommand $command): CommandTester
     {
         $application = new Application();
         $application->addCommand($command);

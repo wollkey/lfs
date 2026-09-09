@@ -17,15 +17,15 @@ final class AssignPickersCommandTest extends IntegrationTestCase
 {
     public function testAssignsAndMarksExternalSoNeitherIsAskedAgain(): void
     {
-        $this->givenMembers('wollkey', 'lenka');
+        $this->givenMembers('wollkey', 'lenka_penka');
         $this->givenRound(1);
         $this->givenRoundFilm('external', 1);
         $this->givenRoundFilm('new', 2);
 
-        $tester = $this->tester();
-        $tester->setInputs(['— mark as external (never ask again)', 'Wollkey (@wollkey)']);
+        $console = $this->console();
+        $console->setInputs(['— mark as external (never ask again)', 'Wollkey (@wollkey)']);
 
-        self::assertSame(Command::SUCCESS, $tester->execute([]));
+        self::assertSame(Command::SUCCESS, $console->execute([]));
         self::assertSame([], $this->rounds->filmsWithoutPicker());
         self::assertNull($this->pickedBy('external'));
         self::assertSame('wollkey', $this->pickedBy('new'));
@@ -37,10 +37,10 @@ final class AssignPickersCommandTest extends IntegrationTestCase
         $this->givenRound(1);
         $this->givenRoundFilm('later', 1);
 
-        $tester = $this->tester();
-        $tester->setInputs(['— skip for now (decide later)']);
+        $console = $this->console();
+        $console->setInputs(['— skip for now (decide later)']);
 
-        self::assertSame(Command::SUCCESS, $tester->execute([]));
+        self::assertSame(Command::SUCCESS, $console->execute([]));
 
         $remaining = $this->rounds->filmsWithoutPicker();
         self::assertCount(1, $remaining);
@@ -61,7 +61,7 @@ final class AssignPickersCommandTest extends IntegrationTestCase
         return $stmt->fetchColumn() ?: null;
     }
 
-    private function tester(): CommandTester
+    private function console(): CommandTester
     {
         $application = new Application();
         $application->addCommand(new AssignPickersCommand($this->members, $this->rounds));

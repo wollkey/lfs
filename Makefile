@@ -107,6 +107,10 @@ pick: ## Assign film pickers interactively (films without a picker)
 	@$(CONSOLE_TTY) rounds:pick
 .PHONY: pick
 
+queue: ## Move a member in the picking queue (usage: make queue, or make queue ARGS="lenka end")
+	@$(CONSOLE_TTY) members:move $(ARGS)
+.PHONY: queue
+
 ##
 ## Backups
 ## -------
