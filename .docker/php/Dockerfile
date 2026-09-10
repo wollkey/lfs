@@ -11,6 +11,13 @@ RUN docker-php-ext-install \
     intl \
     mbstring
 
+# GD resizes the downloaded posters into the sizes the site actually renders.
+RUN apk add --no-cache libjpeg-turbo \
+    && apk add --no-cache --virtual .gd-deps libjpeg-turbo-dev libpng-dev \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install gd \
+    && apk del .gd-deps
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY .docker/caddy/Caddyfile /etc/caddy/Caddyfile

@@ -3,8 +3,12 @@
 /var/
 /data/
 /backups/
-/public/posters/*.jpg
+/public/posters/*
+!/public/posters/_placeholder.svg
 .env
 
 # IDE
 .idea
+
+# macOS
+.DS_Store

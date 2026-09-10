@@ -13,6 +13,12 @@ final readonly class Posters
     private const string JPEG = "\xFF\xD8";
     private const int MIN_BYTES = 1024;
 
+    /**
+     * Derivatives for the site. The 1000px original stays at the root: the Telegram cards need it.
+     */
+    private const array SIZES = ['w500' => 500, 'w300' => 300];
+    private const int QUALITY = 75;
+
     public function __construct(
         private Downloader $downloader,
         private string $dir,
@@ -26,7 +32,7 @@ final readonly class Posters
 
     public function fetch(string $slug, string $url): bool
     {
-        if (!is_dir($this->dir) && !mkdir($this->dir, 0o775, true) && !is_dir($this->dir)) {
+        if (!$this->makeDir($this->dir)) {
             return false;
         }
 
@@ -36,14 +42,58 @@ final readonly class Posters
             return false;
         }
 
-        $target = $this->path($slug);
+        if (!$this->write($this->path($slug), $bytes)) {
+            return false;
+        }
+
+        return $this->resize($slug, force: true);
+    }
+
+    public function resize(string $slug, bool $force = false): bool
+    {
+        $source = null;
+
+        foreach (self::SIZES as $size => $width) {
+            $target = $this->path($slug, $size);
+            if (!$force && is_file($target)) {
+                continue;
+            }
+
+            $source ??= @imagecreatefromjpeg($this->path($slug));
+            if ($source === false) {
+                return false;
+            }
+
+            $small = imagescale($source, $width, mode: IMG_BICUBIC);
+            if ($small === false || !$this->makeDir(dirname($target))) {
+                return false;
+            }
+
+            imageinterlace($small, true);
+
+            $temp = $target.'.tmp';
+            if (!imagejpeg($small, $temp, self::QUALITY) || !rename($temp, $target)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function makeDir(string $dir): bool
+    {
+        return is_dir($dir) || mkdir($dir, 0o775, true) || is_dir($dir);
+    }
+
+    private function write(string $target, string $bytes): bool
+    {
         $temp = $target.'.tmp';
 
         return file_put_contents($temp, $bytes) !== false && rename($temp, $target);
     }
 
-    private function path(string $slug): string
+    private function path(string $slug, string $size = ''): string
     {
-        return "{$this->dir}/{$slug}.jpg";
+        return $size === '' ? "{$this->dir}/{$slug}.jpg" : "{$this->dir}/{$size}/{$slug}.jpg";
     }
 }

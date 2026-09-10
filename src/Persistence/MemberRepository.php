@@ -58,8 +58,6 @@ final readonly class MemberRepository
     }
 
     /**
-     * The picking rotation: active members who hold a place in the queue, in turn order.
-     *
      * @return list<Member>
      */
     public function rotation(): array
@@ -75,8 +73,6 @@ final readonly class MemberRepository
     }
 
     /**
-     * Renumber the queue: the given usernames take places 1..N, in that order.
-     *
      * @param list<string> $usernames
      */
     public function reposition(array $usernames): void

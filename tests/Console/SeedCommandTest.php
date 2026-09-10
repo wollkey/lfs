@@ -16,6 +16,7 @@ use App\Letterboxd\Posters;
 use App\Seeding\NewFilms;
 use App\Seeding\ScrapedRatings;
 use App\Tests\Common\IntegrationTestCase;
+use App\Tests\Letterboxd\Jpeg;
 use App\Tests\Letterboxd\RecordingDownloader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Application;
@@ -28,8 +29,6 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(FilmPage::class)]
 final class SeedCommandTest extends IntegrationTestCase
 {
-    private const string JPEG = "\xFF\xD8\xFF\xE0";
-
     private string $htmlDir;
     private string $posterDir;
     private RecordingDownloader $downloader;
@@ -45,7 +44,7 @@ final class SeedCommandTest extends IntegrationTestCase
 
         $this->downloader = new RecordingDownloader([
             '/film/drive-2011/' => (string) file_get_contents(LFS_ROOT.'/tests/Letterboxd/Fixtures/film_page.html'),
-            'a.ltrbxd.com' => self::JPEG.str_repeat('x', 2048),
+            'a.ltrbxd.com' => Jpeg::bytes(),
         ]);
     }
 
@@ -283,7 +282,7 @@ final class SeedCommandTest extends IntegrationTestCase
         if (!is_dir($this->posterDir)) {
             mkdir($this->posterDir, 0o775, true);
         }
-        file_put_contents("{$this->posterDir}/{$slug}.jpg", self::JPEG);
+        file_put_contents("{$this->posterDir}/{$slug}.jpg", Jpeg::bytes());
     }
 
     /**

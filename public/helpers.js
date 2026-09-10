@@ -16,11 +16,18 @@ export function letterboxdLink(username, label = username) {
     return `<a class="lb-link" href="${letterboxdUrl(username)}" target="_blank" rel="noopener">${esc(label)}</a>`;
 }
 
+const posterSizes = {
+    'poster--sm': {dir: 'w300', loading: 'lazy'},
+    'poster--card': {dir: 'w300', loading: 'lazy'},
+    'poster--lg': {dir: 'w500', loading: 'eager'},
+};
+
 export function posterImg(film, className = '') {
     const cls = className ? `poster ${className}` : 'poster';
+    const {dir, loading} = posterSizes[className] ?? {dir: 'w500', loading: 'lazy'};
     return `
-    <img class="${cls}" src="/posters/${encodeURIComponent(film.slug)}.jpg"
-         alt="${esc(film.title)}" width="125" height="187">`;
+    <img class="${cls}" src="/posters/${dir}/${encodeURIComponent(film.slug)}.jpg"
+         alt="${esc(film.title)}" width="125" height="187" loading="${loading}" decoding="async">`;
 }
 
 const pluralRules = new Intl.PluralRules('ru-RU');

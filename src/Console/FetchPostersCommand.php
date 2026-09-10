@@ -36,6 +36,9 @@ final class FetchPostersCommand extends Command
 
         foreach ($this->films->slugs() as $slug) {
             if ($this->posters->has($slug) && !$force) {
+                if (!$this->posters->resize($slug)) {
+                    $io->warning("Could not resize {$slug}.");
+                }
                 ++$skipped;
                 continue;
             }

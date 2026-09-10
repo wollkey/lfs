@@ -112,6 +112,10 @@ final class SeedCommand extends Command
 
         foreach ($this->films->slugs() as $slug) {
             if ($this->posters->has($slug)) {
+                if (!$this->posters->resize($slug)) {
+                    $io->warning("Could not resize {$slug}.");
+                }
+
                 continue;
             }
 
