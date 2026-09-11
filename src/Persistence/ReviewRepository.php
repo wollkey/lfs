@@ -49,6 +49,19 @@ final readonly class ReviewRepository
     }
 
     /**
+     * @return array<int, Review>
+     */
+    public function byTelegramMessage(): array
+    {
+        $reviews = [];
+        foreach ($this->pdo->query('SELECT * FROM reviews WHERE telegram_message_id IS NOT NULL') as $row) {
+            $reviews[(int) $row['telegram_message_id']] = $this->toReview($row);
+        }
+
+        return $reviews;
+    }
+
+    /**
      * @return Review[]
      */
     public function all(): array

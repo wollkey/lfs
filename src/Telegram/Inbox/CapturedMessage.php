@@ -30,6 +30,29 @@ final readonly class CapturedMessage
     }
 
     /**
+     * @param array<string, mixed> $row
+     */
+    public static function fromArray(array $row): self
+    {
+        return new self(
+            MessageKind::from((string) $row['kind']),
+            (int) $row['updateId'],
+            (int) $row['chatId'],
+            (int) $row['messageId'],
+            (int) $row['date'],
+            isset($row['authorId']) ? (int) $row['authorId'] : null,
+            isset($row['authorUsername']) ? (string) $row['authorUsername'] : null,
+            (string) $row['text'],
+            self::strings($row['urls'] ?? []),
+            self::strings($row['tags'] ?? []),
+            isset($row['replyToMessageId']) ? (int) $row['replyToMessageId'] : null,
+            isset($row['replyToAuthorId']) ? (int) $row['replyToAuthorId'] : null,
+            isset($row['replyToText']) ? (string) $row['replyToText'] : null,
+            self::strings($row['replyToUrls'] ?? []),
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -50,5 +73,17 @@ final readonly class CapturedMessage
             'replyToText' => $this->replyToText,
             'replyToUrls' => $this->replyToUrls,
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function strings(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_map(strval(...), array_filter($value, is_scalar(...))));
     }
 }

@@ -103,6 +103,15 @@ rate: ## Add a member's ratings interactively (film by title, score 1–10)
 	@$(CONSOLE_TTY) rating:add
 .PHONY: rate
 
+reviews: pull-updates ## Import reviews from the captured Telegram log
+	@$(CONSOLE_TTY) reviews:import $(ARGS)
+.PHONY: reviews
+
+pull-updates: init ## Fetch the Telegram capture log from production
+	@rsync -az $(DEPLOY_SSH):$(REMOTE_DIR)/telegram/ var/telegram/
+	@echo -e "$(GREEN)✓ Capture log pulled$(RESET)"
+.PHONY: pull-updates
+
 pick: ## Assign film pickers interactively (films without a picker)
 	@$(CONSOLE_TTY) rounds:pick
 .PHONY: pick

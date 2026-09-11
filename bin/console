@@ -8,6 +8,7 @@ require __DIR__ . '/../vendor/autoload.php';
 use App\Console\AddRatingsCommand;
 use App\Console\AssignPickersCommand;
 use App\Console\FetchPostersCommand;
+use App\Console\ImportReviewsCommand;
 use App\Console\MigrateCommand;
 use App\Console\MoveMemberCommand;
 use App\Console\PostFlashbackCommand;
@@ -28,6 +29,7 @@ use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
 use App\Persistence\Migrator;
 use App\Persistence\RatingRepository;
+use App\Persistence\ReviewRepository;
 use App\Persistence\RoundRepository;
 use App\Seeding\NewFilms;
 use App\Seeding\ScrapedRatings;
@@ -35,6 +37,8 @@ use App\Statistics\Statistics;
 use App\Telegram\Card\CardChrome;
 use App\Telegram\Card\PanelsCard;
 use App\Telegram\Card\StandingsCard;
+use App\Reviewing\Watermark;
+use App\Telegram\Inbox\LogReader;
 use App\Telegram\Messages;
 use App\Telegram\MicroPoster;
 use App\Telegram\PhptgClient;
@@ -49,6 +53,7 @@ $members = new MemberRepository($pdo);
 $films = new FilmRepository($pdo);
 $ratings = new RatingRepository($pdo);
 $rounds = new RoundRepository($pdo);
+$reviews = new ReviewRepository($pdo);
 
 $listParser = new ListParser();
 $ratingParser = new FriendsRatingsParser();
@@ -84,6 +89,14 @@ $app->addCommand(new MigrateCommand($migrator));
 $app->addCommand(new SeedCommand($listParser, $newFilms, $scrapedRatings, $filmPage, $posters, $films));
 $app->addCommand(new FetchPostersCommand($filmPage, $posters, $films));
 $app->addCommand(new AddRatingsCommand($members, $films, $ratings));
+$app->addCommand(new ImportReviewsCommand(
+    new LogReader(__DIR__ . '/../var/telegram'),
+    $members,
+    $films,
+    $rounds,
+    $reviews,
+    new Watermark(__DIR__ . '/../var/telegram/imported-through.txt'),
+));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
 $app->addCommand(new MoveMemberCommand($members));
 $app->addCommand(new PostRoundStandingsCommand(

@@ -48,6 +48,53 @@ final readonly class RoundRepository
         ]);
     }
 
+    public function linkAnnouncement(string $filmSlug, int $messageId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE round_films SET announcement_message_id = :message WHERE film_slug = :film',
+        );
+        $stmt->execute(['message' => $messageId, 'film' => $filmSlug]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function announcements(): array
+    {
+        $map = [];
+        foreach ($this->pdo->query('SELECT announcement_message_id, film_slug FROM round_films WHERE announcement_message_id IS NOT NULL') as $row) {
+            $map[(int) $row['announcement_message_id']] = (string) $row['film_slug'];
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function recentSlugs(int $limit): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT film_slug FROM round_films ORDER BY picked_on DESC LIMIT :limit',
+        );
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_map(strval(...), $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    public function filmAnnouncedIn(int $messageId): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT film_slug FROM round_films WHERE announcement_message_id = :message LIMIT 1',
+        );
+        $stmt->execute(['message' => $messageId]);
+
+        $slug = $stmt->fetchColumn();
+
+        return $slug === false ? null : (string) $slug;
+    }
+
     public function setPicker(int $round, string $filmSlug, string $username): void
     {
         $stmt = $this->pdo->prepare(

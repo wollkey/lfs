@@ -33,6 +33,27 @@ final readonly class MemberRepository
         ]);
     }
 
+    public function linkTelegram(string $username, int $telegramUserId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE members SET telegram_user_id = :telegram WHERE username = :username',
+        );
+        $stmt->execute(['telegram' => $telegramUserId, 'username' => $username]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function byTelegramId(): array
+    {
+        $map = [];
+        foreach ($this->pdo->query('SELECT telegram_user_id, username FROM members WHERE telegram_user_id IS NOT NULL') as $row) {
+            $map[(int) $row['telegram_user_id']] = (string) $row['username'];
+        }
+
+        return $map;
+    }
+
     public function find(string $username): ?Member
     {
         $stmt = $this->pdo->prepare('SELECT username, display_name, position FROM members WHERE username = :u');
