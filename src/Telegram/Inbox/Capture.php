@@ -6,7 +6,7 @@ namespace App\Telegram\Inbox;
 
 final readonly class Capture
 {
-    public const int MIN_LENGTH = 100;
+    public const int MIN_LENGTH = 50;
 
     public function __construct(
         private ?int $chatId = null,
@@ -53,12 +53,15 @@ final readonly class Capture
 
         $text = $this->text($message);
         $tags = $this->tags($text);
-        if ($tags === [] && mb_strlen($text) < $this->minLength) {
-            return null;
-        }
+        $urls = $this->urls($message, $text);
 
         $reply = $this->section($message, 'reply_to_message');
         $replyText = $reply === null ? '' : $this->text($reply);
+        $replyUrls = $reply === null ? [] : $this->urls($reply, $replyText);
+
+        if (!$this->worthKeeping($text, $tags, $urls, $replyUrls)) {
+            return null;
+        }
 
         return new CapturedMessage(
             $kind,
@@ -69,13 +72,44 @@ final readonly class Capture
             $this->authorId($message),
             $this->authorUsername($message),
             $text,
-            $this->urls($message, $text),
+            $urls,
             $tags,
             $reply === null ? null : $this->integer($reply, 'message_id'),
             $reply === null ? null : $this->authorId($reply),
             $replyText === '' ? null : $replyText,
-            $reply === null ? [] : $this->urls($reply, $replyText),
+            $replyUrls,
         );
+    }
+
+    /**
+     * @param list<string> $tags
+     * @param list<string> $urls
+     * @param list<string> $replyUrls
+     */
+    private function worthKeeping(string $text, array $tags, array $urls, array $replyUrls): bool
+    {
+        if ($text === '') {
+            return false;
+        }
+
+        return mb_strlen($text) >= $this->minLength
+            || $tags !== []
+            || $this->carriesAScore($text)
+            || $this->pointsAtAFilm($urls)
+            || $this->pointsAtAFilm($replyUrls);
+    }
+
+    private function carriesAScore(string $text): bool
+    {
+        return preg_match('~(?<!\d)\d{1,2}(?:[.,]\d)?\s*(?:/|из)\s*(?:5|10)(?!\d)~ui', $text) === 1;
+    }
+
+    /**
+     * @param list<string> $urls
+     */
+    private function pointsAtAFilm(array $urls): bool
+    {
+        return array_any($urls, static fn (string $url): bool => str_contains($url, 'letterboxd.com/film/'));
     }
 
     /**

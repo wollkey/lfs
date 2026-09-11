@@ -43,6 +43,53 @@ final class CaptureTest extends TestCase
         self::assertSame(['рецензия'], $captured->tags);
     }
 
+    public function testKeepsAShortMessageEndingWithAScore(): void
+    {
+        foreach (['Понравилось. 4/5', 'Такое себе, 2.5/5', 'Ну 4,5 из 5', 'Крепкая 7 из 10'] as $text) {
+            self::assertNotNull($this->capture($this->message($text)), $text);
+        }
+    }
+
+    public function testDoesNotTakeEveryNumberForAScore(): void
+    {
+        self::assertNull($this->capture($this->message('Приду в 5')));
+        self::assertNull($this->capture($this->message('Начали в 20/30')));
+    }
+
+    public function testKeepsAShortReplyToAFilmAnnouncement(): void
+    {
+        $message = $this->message('Коротко: не зашло.');
+        $message['reply_to_message'] = [
+            'message_id' => 100,
+            'date' => 1_789_038_000,
+            'from' => ['id' => 1, 'username' => 'wollkey'],
+            'text' => 'На этой неделе смотрим «Сталкер» https://letterboxd.com/film/stalker/',
+        ];
+
+        self::assertNotNull($this->capture($message));
+    }
+
+    public function testDropsAShortReplyToOrdinaryChatter(): void
+    {
+        $message = $this->message('Согласен');
+        $message['reply_to_message'] = [
+            'message_id' => 101,
+            'date' => 1_789_038_000,
+            'from' => ['id' => 4242, 'username' => 'al1vka'],
+            'text' => 'Кто-нибудь уже посмотрел?',
+        ];
+
+        self::assertNull($this->capture($message));
+    }
+
+    public function testDropsAMessageWithoutText(): void
+    {
+        $message = $this->message('');
+        unset($message['text']);
+
+        self::assertNull($this->capture($message));
+    }
+
     public function testDropsOtherChats(): void
     {
         $message = $this->message(self::REVIEW);
