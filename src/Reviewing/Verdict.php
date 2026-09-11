@@ -9,6 +9,7 @@ final readonly class Verdict
     public function __construct(
         public bool $isReview,
         public ?string $filmSlug,
+        public bool $startsWithTitle = false,
     ) {
     }
 }

@@ -128,6 +128,34 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
         self::assertNotNull($this->reviews->find('stalker', 'christallisme'));
     }
 
+    public function testTheTitleLineIsCutOffTheStoredReview(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->message(4242, "Сталкер\n\nПовторный просмотр дался легче."));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(true, 'stalker', true)]));
+        $console->setInputs(['']);
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertSame('Повторный просмотр дался легче.', $this->reviews->find('stalker', 'christallisme')?->body);
+    }
+
+    public function testATitleWovenIntoTheSentenceIsKept(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->message(4242, "«Сталкер», поставила ему 2.5/5.\nВизуально красиво, но тяжело."));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(true, 'stalker', false)]));
+        $console->setInputs(['']);
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertStringStartsWith('«Сталкер», поставила', (string) $this->reviews->find('stalker', 'christallisme')?->body);
+    }
+
     public function testTheModelCanSayItIsNotAReview(): void
     {
         $this->givenClub();

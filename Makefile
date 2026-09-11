@@ -106,12 +106,20 @@ rate: ## Add a member's ratings interactively (film by title, score 1–10)
 ## Runs on the host, not in the container: it drives the `claude` CLI and your session.
 reviews: pull-updates ## Import reviews from the captured Telegram log
 	@php bin/console reviews:import $(ARGS)
+	@$(MAKE) --no-print-directory prune-updates
 .PHONY: reviews
 
 pull-updates: init ## Fetch the Telegram capture log from production
 	@rsync -az $(DEPLOY_SSH):$(REMOTE_DIR)/telegram/ var/telegram/
 	@echo -e "$(GREEN)✓ Capture log pulled$(RESET)"
 .PHONY: pull-updates
+
+## var/telegram/ keeps every month forever; production only needs the one still being written.
+prune-updates: ## Drop closed months of the capture log from production
+	@ssh $(DEPLOY_SSH) 'find $(REMOTE_DIR)/telegram -maxdepth 1 -name "updates-*.jsonl" \
+		! -name "updates-$(shell date -u +%Y-%m).jsonl" -print -delete'
+	@echo -e "$(GREEN)✓ Closed months dropped from production$(RESET)"
+.PHONY: prune-updates
 
 pick: ## Assign film pickers interactively (films without a picker)
 	@$(CONSOLE_TTY) rounds:pick

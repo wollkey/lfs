@@ -89,7 +89,8 @@ final class ImportReviewsCommand extends Command
             $known = $stored[$message->messageId] ?? null;
 
             $candidate = $this->resolveMember($io, $candidate, $memberByTelegramId, $dryRun);
-            $candidate = $this->resolveFilm($io, $candidate, $titles, $verdicts[$message->messageId] ?? null);
+            $verdict = $verdicts[$message->messageId] ?? null;
+            $candidate = $this->resolveFilm($io, $candidate, $titles, $verdict);
 
             if (!$candidate->isComplete()) {
                 ++$skipped;
@@ -97,7 +98,7 @@ final class ImportReviewsCommand extends Command
             }
 
             if (!$dryRun) {
-                $this->reviews->save($this->toReview($candidate));
+                $this->reviews->save($this->toReview($candidate, $verdict));
             }
             ++$imported;
 
@@ -270,16 +271,27 @@ final class ImportReviewsCommand extends Command
         return $candidate->withFilm($recent[$choice], MatchedBy::Model);
     }
 
-    private function toReview(Candidate $candidate): Review
+    private function toReview(Candidate $candidate, ?Verdict $verdict): Review
     {
         return new Review(
             (string) $candidate->filmSlug,
             (string) $candidate->memberUsername,
-            $candidate->message->text,
+            self::withoutTitleLine($candidate->message->text, $verdict !== null && $verdict->startsWithTitle),
             gmdate('Y-m-d', $candidate->message->date),
             ReviewSource::Telegram,
             $candidate->message->messageId,
         );
+    }
+
+    private static function withoutTitleLine(string $text, bool $startsWithTitle): string
+    {
+        if (!$startsWithTitle) {
+            return $text;
+        }
+
+        $rest = ltrim(substr($text, (int) strpos($text."\n", "\n")));
+
+        return $rest === '' ? $text : $rest;
     }
 
     /**

@@ -62,6 +62,10 @@ final readonly class ClaudeCodeClassifier implements Classifier
             к сюжету. Ставь film: null, только если фильма действительно нет
             в каталоге или о нём вообще нельзя догадаться.
 
+            Поле title_line — правда, если первая строка сообщения это только название
+            фильма и ничего больше (её потом отрежут). Если название вплетено в фразу
+            («„Сталкер“, поставила ему 2.5/5»), то ложь.
+
             Каталог фильмов (слаг — название — когда смотрели):
             {$catalogueText}
 
@@ -69,7 +73,7 @@ final readonly class ClaudeCodeClassifier implements Classifier
             {$messagesText}
 
             Ответь одним JSON-массивом и ничем больше:
-            [{"id": 123, "review": true, "film": "alien"}]
+            [{"id": 123, "review": true, "film": "alien", "title_line": true}]
             PROMPT;
     }
 
@@ -98,6 +102,7 @@ final readonly class ClaudeCodeClassifier implements Classifier
             $verdicts[$row['id']] = new Verdict(
                 (bool) ($row['review'] ?? false),
                 is_string($film) && $film !== '' ? $film : null,
+                (bool) ($row['title_line'] ?? false),
             );
         }
 
