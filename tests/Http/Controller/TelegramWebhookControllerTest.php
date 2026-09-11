@@ -6,10 +6,8 @@ namespace App\Tests\Http\Controller;
 
 use App\Http\BadRequest;
 use App\Http\Controller\TelegramWebhookController;
-use App\Persistence\Connection;
-use App\Statistics\Statistics;
-use App\Telegram\Messages;
-use App\Tests\Telegram\RecordingTelegramClient;
+use App\Telegram\Inbox\Capture;
+use App\Telegram\Inbox\MessageLog;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -40,13 +38,22 @@ final class TelegramWebhookControllerTest extends TestCase
         ($this->controller())();
     }
 
+    public function testRejectsABodyThatIsNotAnUpdate(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] = 'secret-token';
+
+        $this->expectException(BadRequest::class);
+        $this->expectExceptionMessage('Invalid JSON body.');
+
+        ($this->controller())();
+    }
+
     private function controller(): TelegramWebhookController
     {
-        $stats = new Statistics(Connection::open(':memory:'));
-
         return new TelegramWebhookController(
-            new Messages($stats, 'https://lfs.wollkey.ru'),
-            new RecordingTelegramClient(),
+            new Capture(),
+            new MessageLog(sys_get_temp_dir().'/lfs-inbox-unused'),
             'secret-token',
         );
     }

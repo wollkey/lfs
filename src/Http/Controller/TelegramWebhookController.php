@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controller;
 
 use App\Http\BadRequest;
-use App\Telegram\Messages;
-use App\Telegram\TelegramClient;
+use App\Telegram\Inbox\Capture;
+use App\Telegram\Inbox\MessageLog;
 
 final readonly class TelegramWebhookController
 {
     public function __construct(
-        private Messages $messages,
-        private TelegramClient $client,
+        private Capture $capture,
+        private MessageLog $log,
         #[\SensitiveParameter]
         private string $secretToken,
     ) {
@@ -37,23 +37,10 @@ final readonly class TelegramWebhookController
             throw new BadRequest('Invalid JSON body.');
         }
 
-        $message = $update['message'] ?? null;
-        if (!is_array($message)) {
-            return ['ok' => true];
+        $message = $this->capture->fromUpdate($update);
+        if ($message !== null) {
+            $this->log->append($message);
         }
-
-        $text = $message['text'] ?? null;
-        $chatId = $message['chat']['id'] ?? null;
-        if (!is_string($text) || !is_int($chatId)) {
-            return ['ok' => true];
-        }
-
-        $post = $this->messages->forCommand($text);
-        if ($post === null) {
-            return ['ok' => true];
-        }
-
-        $this->client->send((string) $chatId, $post);
 
         return ['ok' => true];
     }

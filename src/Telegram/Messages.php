@@ -24,16 +24,6 @@ final readonly class Messages
     ) {
     }
 
-    public function forCommand(string $command): ?Post
-    {
-        return match ($this->normalize($command)) {
-            'members' => $this->activeMembers(),
-            'films' => $this->watchedFilms(),
-            'links' => $this->links(),
-            default => null,
-        };
-    }
-
     public function activeMembers(): Post
     {
         $active = array_values(array_filter(
@@ -401,21 +391,5 @@ final readonly class Messages
     private function letterboxdUrl(string $username): string
     {
         return 'https://letterboxd.com/'.$username.'/';
-    }
-
-    private function normalize(string $command): string
-    {
-        $command = trim($command);
-        if ($command === '' || $command[0] !== '/') {
-            return '';
-        }
-
-        $word = preg_split('/\s+/', substr($command, 1))[0] ?? '';
-        $at = strpos($word, '@');
-        if ($at !== false) {
-            $word = substr($word, 0, $at);
-        }
-
-        return strtolower($word);
     }
 }

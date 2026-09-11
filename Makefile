@@ -47,7 +47,7 @@ install: ## Install Composer dependencies
 .PHONY: install
 
 init: ## Create data/, var/logs/ and backups/ directories
-	@mkdir -p data var/logs backups
+	@mkdir -p data var/logs var/telegram backups
 .PHONY: init
 
 ##

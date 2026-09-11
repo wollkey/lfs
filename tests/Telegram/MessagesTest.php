@@ -15,29 +15,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(Post::class)]
 final class MessagesTest extends IntegrationTestCase
 {
-    public function testForCommandMapsKnownCommandsAndIgnoresTheRest(): void
-    {
-        $this->givenMembers('wollkey');
-        $messages = $this->messages();
-
-        self::assertInstanceOf(Post::class, $messages->forCommand('/members'));
-        self::assertInstanceOf(Post::class, $messages->forCommand('/films'));
-        self::assertInstanceOf(Post::class, $messages->forCommand('/links'));
-        self::assertNull($messages->forCommand('/unknown'));
-        self::assertNull($messages->forCommand('hello there'));
-        self::assertNull($messages->forCommand(''));
-    }
-
-    public function testForCommandStripsBotSuffixIgnoresCaseAndArguments(): void
-    {
-        $this->givenMembers('wollkey');
-        $messages = $this->messages();
-
-        self::assertEquals($messages->activeMembers(), $messages->forCommand('/members@LfsBot'));
-        self::assertEquals($messages->activeMembers(), $messages->forCommand('/MEMBERS'));
-        self::assertEquals($messages->activeMembers(), $messages->forCommand('  /members  extra args '));
-    }
-
     public function testActiveMembersListsOnlyActiveMembers(): void
     {
         $this->givenMember('wollkey');

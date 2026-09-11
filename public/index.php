@@ -15,9 +15,8 @@ use App\Http\Controller\TelegramWebhookController;
 use App\Http\NotFound;
 use App\Persistence\Connection;
 use App\Statistics\Statistics;
-use App\Telegram\Messages;
-use App\Telegram\PhptgClient;
-use Phptg\BotApi\TelegramBotApi;
+use App\Telegram\Inbox\Capture;
+use App\Telegram\Inbox\MessageLog;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
@@ -42,13 +41,12 @@ if (!$isProd) {
     $controllers[IngestController::class] = new IngestController(dirname(__DIR__).'/data');
 }
 
-$telegramToken = getenv('TELEGRAM_BOT_TOKEN') ?: null;
 $telegramSecret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: null;
-if ($telegramToken !== null && $telegramSecret !== null) {
-    $siteUrl = getenv('LFS_SITE_URL') ?: 'https://lfs.wollkey.ru';
+if ($telegramSecret !== null) {
+    $telegramChatId = getenv('TELEGRAM_CHAT_ID') ?: null;
     $controllers[TelegramWebhookController::class] = new TelegramWebhookController(
-        new Messages($stats, $siteUrl),
-        new PhptgClient(new TelegramBotApi($telegramToken)),
+        new Capture($telegramChatId === null ? null : (int) $telegramChatId),
+        new MessageLog(dirname(__DIR__).'/var/telegram'),
         $telegramSecret,
     );
 }

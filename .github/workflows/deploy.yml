@@ -61,6 +61,7 @@ jobs:
                 -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
                 -v /var/www/lfs/data:/var/www/data:ro \
                 -v /var/www/lfs/posters:/var/www/public/posters:ro \
+                -v /var/www/lfs/telegram:/var/www/var/telegram \
                 -p 127.0.0.1:8081:8080 \
                 ghcr.io/${{ github.repository }}:latest
               sleep 3
