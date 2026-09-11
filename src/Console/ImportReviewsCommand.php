@@ -12,8 +12,11 @@ use App\Persistence\MemberRepository;
 use App\Persistence\ReviewRepository;
 use App\Persistence\RoundRepository;
 use App\Reviewing\Candidate;
+use App\Reviewing\Classifier;
+use App\Reviewing\Exception\ClassifierException;
 use App\Reviewing\MatchedBy;
 use App\Reviewing\Matcher;
+use App\Reviewing\Verdict;
 use App\Reviewing\Watermark;
 use App\Telegram\Inbox\CapturedMessage;
 use App\Telegram\Inbox\LogReader;
@@ -39,6 +42,7 @@ final class ImportReviewsCommand extends Command
         private readonly RoundRepository $rounds,
         private readonly ReviewRepository $reviews,
         private readonly Watermark $watermark,
+        private readonly ?Classifier $classifier = null,
     ) {
         parent::__construct();
     }
@@ -66,17 +70,26 @@ final class ImportReviewsCommand extends Command
         $memberByTelegramId = $this->members->byTelegramId();
         $seen = $all ? 0 : $this->watermark->value();
 
-        $imported = 0;
-        $skipped = 0;
+        $candidates = [];
         foreach ($written as $message) {
             $known = $stored[$message->messageId] ?? null;
             if ($message->updateId <= $seen || ($known !== null && $known->body === $message->text)) {
                 continue;
             }
 
-            $candidate = $matcher->match($message);
+            $candidates[] = $matcher->match($message);
+        }
+
+        $verdicts = $this->readMinds($io, $candidates, $titles);
+
+        $imported = 0;
+        $skipped = 0;
+        foreach ($candidates as $candidate) {
+            $message = $candidate->message;
+            $known = $stored[$message->messageId] ?? null;
+
             $candidate = $this->resolveMember($io, $candidate, $memberByTelegramId, $dryRun);
-            $candidate = $this->resolveFilm($io, $candidate, $titles);
+            $candidate = $this->resolveFilm($io, $candidate, $titles, $verdicts[$message->messageId] ?? null);
 
             if (!$candidate->isComplete()) {
                 ++$skipped;
@@ -193,9 +206,42 @@ final class ImportReviewsCommand extends Command
     }
 
     /**
+     * @param list<Candidate>       $candidates
+     * @param array<string, string> $titles
+     *
+     * @return array<int, Verdict>
+     */
+    private function readMinds(SymfonyStyle $io, array $candidates, array $titles): array
+    {
+        $unresolved = array_values(array_map(
+            static fn (Candidate $c): CapturedMessage => $c->message,
+            array_filter($candidates, static fn (Candidate $c): bool => $c->filmSlug === null),
+        ));
+
+        if ($this->classifier === null || $unresolved === []) {
+            return [];
+        }
+
+        $catalogue = [];
+        foreach ($this->rounds->picksNewestFirst() as $slug => $when) {
+            $catalogue[$slug] = ($titles[$slug] ?? $slug).' — '.$when;
+        }
+
+        $io->writeln(sprintf('  <comment>читаю %d сообщений…</comment>', count($unresolved)));
+
+        try {
+            return $this->classifier->classify($unresolved, $catalogue);
+        } catch (ClassifierException $e) {
+            $io->warning('Классификатор недоступен, разбираем вручную: '.$e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
      * @param array<string, string> $titles
      */
-    private function resolveFilm(SymfonyStyle $io, Candidate $candidate, array $titles): Candidate
+    private function resolveFilm(SymfonyStyle $io, Candidate $candidate, array $titles, ?Verdict $verdict): Candidate
     {
         if ($candidate->filmSlug !== null || $candidate->memberUsername === null) {
             return $candidate;
@@ -205,16 +251,23 @@ final class ImportReviewsCommand extends Command
         $io->writeln($this->preview($candidate->message->text));
 
         $recent = [];
-        foreach ($this->rounds->recentSlugs(12) as $slug) {
+        foreach (array_slice($this->rounds->picksNewestFirst(), 0, 12, true) as $slug => $when) {
             $recent[$titles[$slug] ?? $slug] = $slug;
         }
 
-        $choice = $io->choice('Какой фильм?', [...array_keys($recent), self::NOT_A_REVIEW], self::NOT_A_REVIEW);
+        $default = self::NOT_A_REVIEW;
+        $guess = $verdict?->isReview === true ? $verdict->filmSlug : null;
+        if ($guess !== null && isset($titles[$guess])) {
+            $default = $titles[$guess];
+            $recent[$default] = $guess;
+        }
+
+        $choice = $io->choice('Какой фильм?', [...array_keys($recent), self::NOT_A_REVIEW], $default);
         if ($choice === self::NOT_A_REVIEW) {
             return $candidate;
         }
 
-        return $candidate->withFilm($recent[$choice], MatchedBy::Unknown);
+        return $candidate->withFilm($recent[$choice], MatchedBy::Model);
     }
 
     private function toReview(Candidate $candidate): Review

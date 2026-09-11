@@ -7,12 +7,15 @@ namespace App\Tests\Console;
 use App\Console\ImportReviewsCommand;
 use App\Domain\Film;
 use App\Domain\ReviewSource;
+use App\Reviewing\Classifier;
+use App\Reviewing\Verdict;
 use App\Reviewing\Watermark;
 use App\Telegram\Inbox\CapturedMessage;
 use App\Telegram\Inbox\LogReader;
 use App\Telegram\Inbox\MessageKind;
 use App\Telegram\Inbox\MessageLog;
 use App\Tests\Common\IntegrationTestCase;
+use App\Tests\Reviewing\FixedVerdicts;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
@@ -109,6 +112,34 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
 
         self::assertNotNull($this->reviews->find('stalker', 'christallisme'));
         self::assertNotNull($this->reviews->find('alien', 'christallisme'));
+    }
+
+    public function testTheModelsGuessIsPreselectedSoEnterAcceptsIt(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->message(4242, "Сталкер\n\nПовторный просмотр дался легче."));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(true, 'stalker')]));
+        $console->setInputs(['']);
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertNotNull($this->reviews->find('stalker', 'christallisme'));
+    }
+
+    public function testTheModelCanSayItIsNotAReview(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->message(4242, 'Во сколько сегодня собираемся смотреть?'));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(false, null)]));
+        $console->setInputs(['']);
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertSame([], $this->reviews->all());
     }
 
     public function testAnUnmatchedMessageIsOfferedForAManualChoice(): void
@@ -248,7 +279,7 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
         );
     }
 
-    private function console(): CommandTester
+    private function console(?Classifier $classifier = null): CommandTester
     {
         $command = new ImportReviewsCommand(
             new LogReader($this->dir),
@@ -257,6 +288,7 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
             $this->rounds,
             $this->reviews,
             new Watermark($this->dir.'/imported-through.txt'),
+            $classifier,
         );
 
         new Application()->addCommand($command);

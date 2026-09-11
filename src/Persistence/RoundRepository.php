@@ -70,17 +70,16 @@ final readonly class RoundRepository
     }
 
     /**
-     * @return list<string>
+     * @return array<string, string> slug => pick date, newest first
      */
-    public function recentSlugs(int $limit): array
+    public function picksNewestFirst(): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT film_slug FROM round_films ORDER BY picked_on DESC LIMIT :limit',
-        );
-        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
-        $stmt->execute();
+        $picks = [];
+        foreach ($this->pdo->query('SELECT film_slug, round_number, picked_on FROM round_films ORDER BY picked_on DESC') as $row) {
+            $picks[(string) $row['film_slug']] = sprintf('круг %d, %s', (int) $row['round_number'], (string) $row['picked_on']);
+        }
 
-        return array_map(strval(...), $stmt->fetchAll(\PDO::FETCH_COLUMN));
+        return $picks;
     }
 
     public function filmAnnouncedIn(int $messageId): ?string

@@ -37,6 +37,7 @@ use App\Statistics\Statistics;
 use App\Telegram\Card\CardChrome;
 use App\Telegram\Card\PanelsCard;
 use App\Telegram\Card\StandingsCard;
+use App\Reviewing\ClaudeCodeClassifier;
 use App\Reviewing\Watermark;
 use App\Telegram\Inbox\LogReader;
 use App\Telegram\Messages;
@@ -96,6 +97,7 @@ $app->addCommand(new ImportReviewsCommand(
     $rounds,
     $reviews,
     new Watermark(__DIR__ . '/../var/telegram/imported-through.txt'),
+    new ClaudeCodeClassifier(),
 ));
 $app->addCommand(new AssignPickersCommand($members, $rounds));
 $app->addCommand(new MoveMemberCommand($members));

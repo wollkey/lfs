@@ -103,8 +103,9 @@ rate: ## Add a member's ratings interactively (film by title, score 1–10)
 	@$(CONSOLE_TTY) rating:add
 .PHONY: rate
 
+## Runs on the host, not in the container: it drives the `claude` CLI and your session.
 reviews: pull-updates ## Import reviews from the captured Telegram log
-	@$(CONSOLE_TTY) reviews:import $(ARGS)
+	@php bin/console reviews:import $(ARGS)
 .PHONY: reviews
 
 pull-updates: init ## Fetch the Telegram capture log from production
