@@ -299,7 +299,7 @@ final readonly class Statistics
         }
 
         $ratingRows = $this->fetchAll(<<<SQL
-                SELECT m.username, m.display_name, r.score, r.review
+                SELECT m.username, m.display_name, r.score
                 FROM ratings r
                 JOIN members m ON m.username = r.member_username
                 WHERE r.film_slug = :slug
@@ -311,8 +311,25 @@ final readonly class Statistics
         $spread = $scores === [] ? null : max($scores) - min($scores);
 
         $ratings = array_map(
-            static fn (array $r) => new MemberScore($r['username'], $r['display_name'], (int) $r['score'], $r['review']),
+            static fn (array $r) => new MemberScore($r['username'], $r['display_name'], (int) $r['score']),
             $ratingRows,
+        );
+
+        $reviews = array_map(
+            static fn (array $r) => new MemberReview(
+                $r['username'],
+                $r['display_name'],
+                $r['score'] !== null ? (int) $r['score'] : null,
+                $r['body'],
+            ),
+            $this->fetchAll(<<<SQL
+                    SELECT m.username, m.display_name, rt.score, rv.body
+                    FROM reviews rv
+                    JOIN members m       ON m.username = rv.member_username
+                    LEFT JOIN ratings rt ON rt.film_slug = rv.film_slug AND rt.member_username = rv.member_username
+                    WHERE rv.film_slug = :slug
+                    ORDER BY rt.score IS NULL, rt.score DESC, m.display_name
+                SQL, ['slug' => $slug]),
         );
 
         $notWatched = array_map(
@@ -334,6 +351,7 @@ final readonly class Statistics
             $average,
             $spread,
             $ratings,
+            $reviews,
             $notWatched,
         );
     }
@@ -576,14 +594,18 @@ final readonly class Statistics
     private function roundActivity(int $round): array
     {
         $rows = $this->fetchAll(<<<SQL
+                WITH picked AS (SELECT film_slug FROM round_films WHERE round_number = :round),
+                     scored AS (SELECT member_username AS username, score FROM ratings
+                                WHERE film_slug IN (SELECT film_slug FROM picked)),
+                     written AS (SELECT member_username AS username FROM reviews
+                                 WHERE film_slug IN (SELECT film_slug FROM picked)),
+                     took_part AS (SELECT username FROM scored UNION SELECT username FROM written)
                 SELECT m.username, m.display_name,
-                       COUNT(r.score) AS ratings,
-                       SUM(CASE WHEN r.review IS NOT NULL AND r.review <> '' THEN 1 ELSE 0 END) AS reviews,
-                       AVG(r.score) AS average
-                FROM ratings r
-                JOIN round_films rf ON rf.film_slug = r.film_slug AND rf.round_number = :round
-                JOIN members m      ON m.username   = r.member_username
-                GROUP BY m.username
+                       (SELECT COUNT(*) FROM scored s  WHERE s.username = p.username) AS ratings,
+                       (SELECT COUNT(*) FROM written w WHERE w.username = p.username) AS reviews,
+                       (SELECT AVG(s.score) FROM scored s WHERE s.username = p.username) AS average
+                FROM took_part p
+                JOIN members m ON m.username = p.username
                 ORDER BY ratings DESC, reviews DESC, m.display_name
             SQL, ['round' => $round]);
 
@@ -732,7 +754,7 @@ final readonly class Statistics
     private function allRatingsGrouped(): array
     {
         $rows = $this->pdo->query(<<<SQL
-                SELECT r.film_slug, m.username, m.display_name, r.score, r.review
+                SELECT r.film_slug, m.username, m.display_name, r.score
                 FROM ratings r
                 JOIN members m ON m.username = r.member_username
                 ORDER BY r.score DESC, m.display_name
@@ -744,7 +766,6 @@ final readonly class Statistics
                 $row['username'],
                 $row['display_name'],
                 (int) $row['score'],
-                $row['review'],
             );
         }
 

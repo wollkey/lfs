@@ -228,11 +228,12 @@ final class SeedCommandTest extends IntegrationTestCase
         $this->givenFriendsPage('drive-2011');
         $this->givenKnownFilm('citizen-kane');
         $this->givenFixture('friends/citizen-kane.html', 'friends_film.html');
-        $this->pdo->exec("UPDATE ratings SET review = 'kept' WHERE 1");
+        $this->givenReview('drive-2011', 'wollkey', 'kept');
 
         $this->console()->execute(['html-dir' => $this->htmlDir]);
 
         self::assertSame([6, 2, 'wollkey', '2024-01-01'], $this->slot('drive-2011'));
+        self::assertSame('kept', $this->reviews->find('drive-2011', 'wollkey')?->body);
     }
 
     public function testSkipsRatersWhoAreNotClubMembers(): void

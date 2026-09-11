@@ -7,8 +7,9 @@ namespace App\Statistics;
 final readonly class FilmDetail
 {
     /**
-     * @param MemberScore[] $ratings
-     * @param MemberName[]  $notWatched
+     * @param MemberScore[]  $ratings
+     * @param MemberReview[] $reviews
+     * @param MemberName[]   $notWatched
      */
     public function __construct(
         public string $slug,
@@ -19,6 +20,7 @@ final readonly class FilmDetail
         public ?float $average,
         public ?int $spread,
         public array $ratings,
+        public array $reviews,
         public array $notWatched,
     ) {
     }

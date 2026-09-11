@@ -17,9 +17,9 @@ function reviewCard(r) {
     <li class="review">
       <div class="review__who">
         <span class="review__name">${esc(r.displayName)}</span>
-        <span class="review__score">${r.score}</span>
+        <span class="review__score">${r.score === null ? '—' : r.score}</span>
       </div>
-      <p class="review__body">${esc(r.review)}</p>
+      <p class="review__body">${esc(r.body)}</p>
     </li>`;
 }
 
@@ -46,11 +46,10 @@ export async function render(root, params) {
         ? `<p class="placeholder">Пока нет оценок.</p>`
         : `<ul class="rating-list">${ratings.map(ratingRow).join('')}</ul>`;
 
-    const reviews = ratings.filter((r) => r.review !== null && r.review.trim() !== '');
-    const reviewsHtml = reviews.length === 0 ? '' : `
+    const reviewsHtml = film.reviews.length === 0 ? '' : `
     <section class="reviews">
       <h2 class="section-title">Рецензии</h2>
-      <ul class="review-list">${reviews.map(reviewCard).join('')}</ul>
+      <ul class="review-list">${film.reviews.map(reviewCard).join('')}</ul>
     </section>`;
 
     const notWatchedHtml = film.notWatched.length === 0 ? '' : `

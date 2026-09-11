@@ -7,12 +7,14 @@ namespace App\Tests\Common;
 use App\Domain\Film;
 use App\Domain\Member;
 use App\Domain\MemberStatus;
+use App\Domain\Review;
 use App\Domain\Round;
 use App\Persistence\Connection;
 use App\Persistence\FilmRepository;
 use App\Persistence\MemberRepository;
 use App\Persistence\Migrator;
 use App\Persistence\RatingRepository;
+use App\Persistence\ReviewRepository;
 use App\Persistence\RoundRepository;
 use App\Statistics\Statistics;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +26,7 @@ abstract class IntegrationTestCase extends TestCase
     protected FilmRepository $films;
     protected RoundRepository $rounds;
     protected RatingRepository $ratings;
+    protected ReviewRepository $reviews;
 
     protected function setUp(): void
     {
@@ -34,6 +37,7 @@ abstract class IntegrationTestCase extends TestCase
         $this->films = new FilmRepository($this->pdo);
         $this->rounds = new RoundRepository($this->pdo);
         $this->ratings = new RatingRepository($this->pdo);
+        $this->reviews = new ReviewRepository($this->pdo);
     }
 
     protected function statistics(int $quorum = 5): Statistics
@@ -72,5 +76,10 @@ abstract class IntegrationTestCase extends TestCase
         foreach ($scores as $username => $score) {
             $this->ratings->setRating($slug, $username, $score);
         }
+    }
+
+    protected function givenReview(string $slug, string $username, string $body = 'Отзыв'): void
+    {
+        $this->reviews->save(new Review($slug, $username, $body));
     }
 }

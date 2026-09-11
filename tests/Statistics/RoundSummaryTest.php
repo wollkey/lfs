@@ -96,6 +96,25 @@ final class RoundSummaryTest extends IntegrationTestCase
         self::assertSame([2, 0], [$byName['Koshmarus']->ratings, $byName['Koshmarus']->reviews]);
     }
 
+    public function testAReviewWithoutARatingStillCountsAsTakingPart(): void
+    {
+        $this->seedRound();
+        $this->givenMember('vans_von_trier', position: 4);
+        $this->givenReview('unity', 'vans_von_trier');
+
+        $summary = $this->statistics(quorum: 2)->roundSummary(1);
+
+        self::assertNotNull($summary);
+        $byName = [];
+        foreach ($summary->activity as $member) {
+            $byName[$member->displayName] = $member;
+        }
+
+        self::assertArrayHasKey('Vans_von_trier', $byName);
+        self::assertSame([0, 1], [$byName['Vans_von_trier']->ratings, $byName['Vans_von_trier']->reviews]);
+        self::assertNull($byName['Vans_von_trier']->average);
+    }
+
     private function seedRound(): void
     {
         $this->givenMembers('al1vka', 'christallisme', 'koshmarus');
@@ -112,14 +131,6 @@ final class RoundSummaryTest extends IntegrationTestCase
         $this->givenReview('unity', 'al1vka');
         $this->givenReview('flop', 'al1vka');
         $this->givenReview('unity', 'christallisme');
-    }
-
-    private function givenReview(string $slug, string $username): void
-    {
-        $stmt = $this->pdo->prepare(
-            'UPDATE ratings SET review = :review WHERE film_slug = :slug AND member_username = :user',
-        );
-        $stmt->execute(['review' => 'text', 'slug' => $slug, 'user' => $username]);
     }
 
     /**

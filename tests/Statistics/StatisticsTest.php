@@ -94,6 +94,22 @@ final class StatisticsTest extends IntegrationTestCase
         self::assertContains('justdanya', $usernames);
     }
 
+    public function testFilmDetailCarriesReviewsWithAndWithoutAScore(): void
+    {
+        $this->givenMembers('wollkey', 'lenka_penka', 'christallisme');
+        $this->givenFilmRatedBy('stalker', ['wollkey' => 9, 'lenka_penka' => 7]);
+        $this->givenReview('stalker', 'wollkey', 'Пересмотр дался легче.');
+        $this->givenReview('stalker', 'christallisme', 'Оценку поставлю позже.');
+
+        $detail = $this->statistics()->filmDetail('stalker');
+
+        self::assertCount(2, $detail->ratings);
+        self::assertSame(
+            [['wollkey', 9], ['christallisme', null]],
+            array_map(static fn ($r) => [$r->username, $r->score], $detail->reviews),
+        );
+    }
+
     public function testFormerMemberIsNeverListedAsNotWatched(): void
     {
         $this->givenMembers('wollkey', 'vika');
