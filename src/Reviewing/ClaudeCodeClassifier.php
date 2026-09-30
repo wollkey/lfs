@@ -9,7 +9,7 @@ use App\Telegram\Inbox\CapturedMessage;
 
 final readonly class ClaudeCodeClassifier implements Classifier
 {
-    public const int BATCH = 20;
+    public const int BATCH = 50;
 
     public function __construct(
         private string $binary = 'claude',

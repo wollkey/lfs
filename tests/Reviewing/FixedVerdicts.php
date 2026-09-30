@@ -15,6 +15,11 @@ final class FixedVerdicts implements Classifier
     public array $catalogue = [];
 
     /**
+     * @var list<int>
+     */
+    public array $seen = [];
+
+    /**
      * @param array<int, Verdict> $verdicts
      */
     public function __construct(
@@ -25,6 +30,9 @@ final class FixedVerdicts implements Classifier
     public function classify(array $messages, array $films): array
     {
         $this->catalogue = $films;
+        foreach ($messages as $message) {
+            $this->seen[] = $message->messageId;
+        }
 
         return $this->verdicts;
     }

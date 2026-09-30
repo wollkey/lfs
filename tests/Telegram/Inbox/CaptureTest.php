@@ -33,6 +33,27 @@ final class CaptureTest extends TestCase
     public function testDropsChatter(): void
     {
         self::assertNull($this->capture($this->message('Согласен')));
+        self::assertNull($this->capture($this->message(
+            'ну я уже выше писал что мне в целом пофиг, за компанию могу глянуть',
+        )));
+    }
+
+    public function testDropsAForwardedPost(): void
+    {
+        foreach (['forward_origin' => ['type' => 'channel'], 'forward_date' => 1_789_038_000] as $key => $value) {
+            $message = $this->message(self::REVIEW);
+            $message[$key] = $value;
+
+            self::assertNull($this->capture($message), $key);
+        }
+    }
+
+    public function testDropsAPostAutomaticallyForwardedFromTheLinkedChannel(): void
+    {
+        $message = $this->message(self::REVIEW);
+        $message['is_automatic_forward'] = true;
+
+        self::assertNull($this->capture($message));
     }
 
     public function testKeepsAShortMessageCarryingATag(): void

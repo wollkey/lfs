@@ -6,7 +6,7 @@ namespace App\Telegram\Inbox;
 
 final readonly class Capture
 {
-    public const int MIN_LENGTH = 50;
+    public const int MIN_LENGTH = 100;
 
     public function __construct(
         private ?int $chatId = null,
@@ -43,6 +43,10 @@ final readonly class Capture
         $pinned = $this->section($message, 'pinned_message');
         if ($pinned !== null) {
             return $this->announcement($updateId, $chatId, $pinned);
+        }
+
+        if ($this->forwarded($message)) {
+            return null;
         }
 
         $messageId = $this->integer($message, 'message_id');
@@ -97,6 +101,16 @@ final readonly class Capture
             || $this->carriesAScore($text)
             || $this->pointsAtAFilm($urls)
             || $this->pointsAtAFilm($replyUrls);
+    }
+
+    /**
+     * @param array<mixed> $message
+     */
+    private function forwarded(array $message): bool
+    {
+        return isset($message['forward_origin'])
+            || isset($message['forward_date'])
+            || ($message['is_automatic_forward'] ?? null) === true;
     }
 
     private function carriesAScore(string $text): bool

@@ -156,7 +156,35 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
         self::assertStringStartsWith('«Сталкер», поставила', (string) $this->reviews->find('stalker', 'christallisme')?->body);
     }
 
-    public function testTheModelCanSayItIsNotAReview(): void
+    public function testChatterTheModelDismissedIsNeverAskedAbout(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->message(4242, 'Во сколько сегодня собираемся смотреть?'));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(false, null)]));
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertSame([], $this->reviews->all());
+        self::assertStringNotContainsString('Какой фильм?', $console->getDisplay());
+        self::assertStringContainsString('отсеяно моделью 1', $console->getDisplay());
+    }
+
+    public function testDismissedChatterDoesNotEvenAskWhoWroteIt(): void
+    {
+        $this->givenClub();
+
+        $this->given($this->message(4242, 'Во сколько сегодня собираемся смотреть?'));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(false, null)]));
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertStringNotContainsString('Кто это?', $console->getDisplay());
+        self::assertSame([], $this->members->byTelegramId());
+    }
+
+    public function testAskAllPutsEveryMessageBackInFrontOfMe(): void
     {
         $this->givenClub();
         $this->givenLink('christallisme', 4242);
@@ -166,8 +194,23 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
         $console = $this->console(new FixedVerdicts([321 => new Verdict(false, null)]));
         $console->setInputs(['']);
 
-        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertSame(Command::SUCCESS, $console->execute(['--ask-all' => true]));
+        self::assertStringContainsString('Какой фильм?', $console->getDisplay());
         self::assertSame([], $this->reviews->all());
+    }
+
+    public function testAMessageMatchedByItsReplyIsKeptEvenIfTheModelDisagrees(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->announcement());
+        $this->given($this->message(4242, 'Не моё, но досмотрел.', replyTo: self::STALKER_ANNOUNCEMENT));
+
+        $console = $this->console(new FixedVerdicts([321 => new Verdict(false, null)]));
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+        self::assertNotNull($this->reviews->find('stalker', 'christallisme'));
     }
 
     public function testAnUnmatchedMessageIsOfferedForAManualChoice(): void
@@ -230,6 +273,29 @@ final class ImportReviewsCommandTest extends IntegrationTestCase
         self::assertSame(Command::SUCCESS, $this->console()->execute([]));
 
         self::assertSame('Первый заход. Дополню: финал вытягивает.', $this->reviews->find('stalker', 'christallisme')?->body);
+    }
+
+    public function testAMessageEditedBeforeTheFirstRunIsReadOnceInItsLatestForm(): void
+    {
+        $this->givenClub();
+        $this->givenLink('christallisme', 4242);
+
+        $this->given($this->message(4242, 'Досмотрел вчера.', updateId: 10));
+        $this->given($this->message(
+            4242,
+            'Досмотрел вчера, впечатления смешанные.',
+            kind: MessageKind::Edited,
+            updateId: 11,
+        ));
+
+        $classifier = new FixedVerdicts([321 => new Verdict(true, 'stalker')]);
+        $console = $this->console($classifier);
+        $console->setInputs(['']);
+
+        self::assertSame(Command::SUCCESS, $console->execute([]));
+
+        self::assertSame([321], $classifier->seen);
+        self::assertSame('Досмотрел вчера, впечатления смешанные.', $this->reviews->find('stalker', 'christallisme')?->body);
     }
 
     public function testADryRunTouchesNothing(): void

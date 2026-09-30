@@ -53,6 +53,8 @@ final class ImportReviewsCommand extends Command
         bool $dryRun = false,
         #[Option(description: 'Walk every captured message again, not only the ones since the last run.')]
         bool $all = false,
+        #[Option(description: 'Ask about every message, even the ones the model calls chatter.')]
+        bool $askAll = false,
     ): int {
         $messages = $this->log->all();
         if ($messages === []) {
@@ -84,12 +86,19 @@ final class ImportReviewsCommand extends Command
 
         $imported = 0;
         $skipped = 0;
+        $chatter = 0;
         foreach ($candidates as $candidate) {
             $message = $candidate->message;
+            $verdict = $verdicts[$message->messageId] ?? null;
+
+            if (!$askAll && self::isChatter($candidate, $verdict)) {
+                ++$chatter;
+                continue;
+            }
+
             $known = $stored[$message->messageId] ?? null;
 
             $candidate = $this->resolveMember($io, $candidate, $memberByTelegramId, $dryRun);
-            $verdict = $verdicts[$message->messageId] ?? null;
             $candidate = $this->resolveFilm($io, $candidate, $titles, $verdict);
 
             if (!$candidate->isComplete()) {
@@ -117,14 +126,20 @@ final class ImportReviewsCommand extends Command
         }
 
         $io->success(sprintf(
-            '%s: отзывов %d, пропущено %d, анонсов привязано %d.',
+            '%s: отзывов %d, отсеяно моделью %d, пропущено %d, анонсов привязано %d.',
             $dryRun ? 'Пробный прогон' : 'Готово',
             $imported,
+            $chatter,
             $skipped,
             count($pinned),
         ));
 
         return Command::SUCCESS;
+    }
+
+    private static function isChatter(Candidate $candidate, ?Verdict $verdict): bool
+    {
+        return $candidate->filmSlug === null && $verdict !== null && !$verdict->isReview;
     }
 
     /**
@@ -165,10 +180,19 @@ final class ImportReviewsCommand extends Command
      */
     private function onlyWritten(array $messages): array
     {
-        return array_values(array_filter(
-            $messages,
-            static fn (CapturedMessage $m): bool => $m->kind !== MessageKind::Pin && $m->text !== '',
-        ));
+        $latest = [];
+        foreach ($messages as $message) {
+            if ($message->kind === MessageKind::Pin || $message->text === '') {
+                continue;
+            }
+
+            $known = $latest[$message->messageId] ?? null;
+            if ($known === null || $known->updateId < $message->updateId) {
+                $latest[$message->messageId] = $message;
+            }
+        }
+
+        return array_values($latest);
     }
 
     /**
@@ -228,7 +252,7 @@ final class ImportReviewsCommand extends Command
             $catalogue[$slug] = ($titles[$slug] ?? $slug).' — '.$when;
         }
 
-        $io->writeln(sprintf('  <comment>читаю %d сообщений…</comment>', count($unresolved)));
+        $io->writeln(sprintf('  <comment>читаю %d сообщений, это займёт несколько минут…</comment>', count($unresolved)));
 
         try {
             return $this->classifier->classify($unresolved, $catalogue);
