@@ -9,10 +9,12 @@ use App\Statistics\HotTake;
 use App\Statistics\ListedFilm;
 use App\Statistics\MemberActivity;
 use App\Statistics\MemberScore;
+use App\Statistics\MemberSpotlight;
 use App\Statistics\MemberStats;
 use App\Statistics\RatedFilm;
 use App\Statistics\RoundPick;
 use App\Statistics\RoundSummary;
+use App\Statistics\ScoredFilm;
 use App\Statistics\Statistics;
 
 final readonly class Messages
@@ -123,7 +125,7 @@ final readonly class Messages
         $lines = ['<b>🕰 Год назад в этот день</b>', ''];
         foreach ($films as $film) {
             $images[] = $this->poster($film->slug);
-            $lines[] = sprintf('<b><a href="%s">%s</a></b> - %s (%d оценок)', $this->filmUrl($film->slug), $this->esc($film->title), $this->rating($film->average), $film->votes);
+            $lines[] = sprintf('%s - %s (%d оценок)', $this->filmLink($film->slug, $film->title), $this->rating($film->average), $film->votes);
         }
 
         return new Post('🕰 Год назад в этот день', intro: implode("\n", $lines), images: $images);
@@ -143,7 +145,7 @@ final readonly class Messages
         $lines = [
             '<b>🎬 Последний кадр</b>',
             '',
-            sprintf('<b><a href="%s">%s</a></b> - %s', $this->filmUrl($film->slug), $this->esc($film->title), $this->rating($film->average)),
+            sprintf('%s - %s', $this->filmLink($film->slug, $film->title), $this->rating($film->average)),
         ];
 
         if ($max === $min) {
@@ -154,6 +156,29 @@ final readonly class Messages
         }
 
         return new Post('🎬 Последний кадр', intro: implode("\n", $lines), images: [$this->poster($film->slug)]);
+    }
+
+    public function spotlight(?\DateTimeImmutable $now = null): ?Post
+    {
+        $monday = ($now ?? new \DateTimeImmutable())->modify('monday this week');
+        $s = $this->stats->pickerSpotlight($monday->format('Y-m-d'), $monday->modify('+6 days')->format('Y-m-d'));
+
+        if ($s === null) {
+            return null;
+        }
+
+        $sections = array_filter([
+            sprintf("<b>⭐ Неделя славы - %s</b>\nВыбор недели - %s", $this->mention($s), $this->filmLink($s->pick->slug, $s->pick->title)),
+            $this->section('🎬 Выбор фильмов', $this->pickLines($s)),
+            $this->section('🍿 Оценки', $this->ratingLines($s)),
+            $this->favorites($s->favorites),
+        ]);
+
+        return new Post(
+            '⭐ Неделя славы',
+            new Table([], [[new Cell($s->displayName), new Cell($s->pick->title)]]),
+            implode("\n\n", $sections),
+        );
     }
 
     /**
@@ -176,6 +201,106 @@ final readonly class Messages
                 $this->roundActivity($summary),
             ],
         ];
+    }
+
+    private function mention(MemberSpotlight $s): string
+    {
+        return $s->telegramUserId === null
+            ? $this->esc($s->displayName)
+            : sprintf('<a href="tg://user?id=%d">%s</a>', $s->telegramUserId, $this->esc($s->displayName));
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function section(string $heading, array $lines): string
+    {
+        return $lines === [] ? '' : sprintf("<b>%s</b>\n<blockquote>%s</blockquote>", $heading, implode("\n", $lines));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function pickLines(MemberSpotlight $s): array
+    {
+        $lines = [];
+
+        if ($s->bestPicks !== []) {
+            $lines[] = sprintf('Лучший - %s (%s)', $this->listedLinks($s->bestPicks), $this->rating($s->bestPicks[0]->average));
+        }
+        if ($s->worstPicks !== []) {
+            $lines[] = sprintf('Худший - %s (%s)', $this->listedLinks($s->worstPicks), $this->rating($s->worstPicks[0]->average));
+        }
+
+        $previous = $s->previousPick;
+        if ($previous !== null && !in_array($previous, [...$s->bestPicks, ...$s->worstPicks], true)) {
+            $lines[] = sprintf('Прошлый - %s (%s)', $this->filmLink($previous->slug, $previous->title), $this->rating($previous->average));
+        }
+        if ($previous === null) {
+            $lines[] = 'Первый выбор в клубе - дебют!';
+        }
+
+        if ($s->picksAverage !== null && $s->clubPicksAverage !== null) {
+            $lines[] = sprintf('Средний рейтинг - %s (по клубу %s)', $this->rating($s->picksAverage), $this->rating($s->clubPicksAverage));
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function ratingLines(MemberSpotlight $s): array
+    {
+        if ($s->ratings === 0) {
+            return [];
+        }
+
+        $line = sprintf('Всего - %d, средняя %s', $s->ratings, $this->rating($s->averageGiven));
+        if ($s->leaning !== null && abs($s->leaning) >= 0.1) {
+            $line .= sprintf(' - на %s %s, чем у клуба', number_format(abs($s->leaning), 1), $s->leaning > 0 ? 'выше' : 'ниже');
+        }
+
+        $lines = [$line];
+
+        if ($s->hotTakes !== []) {
+            $lines[] = '🌶️ Самая спорная - '.implode(', ', array_map(
+                fn (ScoredFilm $f): string => sprintf('%s (%d при средней %s)', $this->filmLink($f->slug, $f->title), $f->score, $this->rating($f->average)),
+                $s->hotTakes,
+            ));
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @param ScoredFilm[] $films
+     */
+    private function favorites(array $films): string
+    {
+        if ($films === []) {
+            return '';
+        }
+
+        return sprintf(
+            "<b>❤️ %s - %d из 10</b>\n<blockquote expandable>%s</blockquote>",
+            count($films) > 1 ? 'Любимые фильмы' : 'Любимый фильм',
+            $films[0]->score,
+            implode("\n", array_map(fn (ScoredFilm $f): string => $this->filmLink($f->slug, $f->title), $films)),
+        );
+    }
+
+    /**
+     * @param ListedFilm[] $films
+     */
+    private function listedLinks(array $films): string
+    {
+        return implode(', ', array_map(fn (ListedFilm $f): string => $this->filmLink($f->slug, $f->title), $films));
+    }
+
+    private function filmLink(string $slug, string $title): string
+    {
+        return sprintf('<b><a href="%s">%s</a></b>', $this->filmUrl($slug), $this->esc($title));
     }
 
     /**
@@ -314,8 +439,8 @@ final readonly class Messages
         $rows = [
             $this->panel('Больше всех оценок', $this->memberNames($s->mostRatings), $this->memberValue($s->mostRatings, $ratings)),
             $this->panel('Больше всех рецензий', $this->memberNames($s->mostReviews), $this->memberValue($s->mostReviews, $reviews)),
-            $this->panel('Самый щедрый', $this->memberNames($s->mostGenerous), $this->memberValue($s->mostGenerous, $average)),
-            $this->panel('Самый строгий', $this->memberNames($s->harshest), $this->memberValue($s->harshest, $average)),
+            $this->panel('Самые высокие оценки', $this->memberNames($s->mostGenerous), $this->memberValue($s->mostGenerous, $average)),
+            $this->panel('Самые низкие оценки', $this->memberNames($s->harshest), $this->memberValue($s->harshest, $average)),
             $this->panel('Лучший выбор', $this->pickNames($s->bestPicks), $this->pickValue($s->bestPicks)),
         ];
 

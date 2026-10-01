@@ -16,6 +16,11 @@ interface TelegramClient
     /**
      * @throws ApiException
      */
+    public function sendText(string $chatId, string $html): void;
+
+    /**
+     * @throws ApiException
+     */
     public function sendPhoto(string $chatId, string $imagePath, string $caption, bool $html = false): void;
 
     /**

@@ -56,7 +56,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->photos);
-        self::assertCount(1, $client->sent);
+        self::assertCount(1, $client->texts);
     }
 
     public function testSkipsWhenNothingWatchedThatWeekAYearAgo(): void
@@ -67,7 +67,7 @@ final class PostFlashbackCommandTest extends IntegrationTestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->photos);
-        self::assertSame([], $client->sent);
+        self::assertSame([], $client->texts);
     }
 
     public function testReturnsFailureWhenTelegramErrors(): void

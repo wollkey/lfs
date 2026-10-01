@@ -10,6 +10,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 final readonly class MicroPoster
 {
+    private const int CAPTION_LIMIT = 1024;
+
     public function __construct(
         private ?TelegramClient $client,
         private ?string $chatId,
@@ -43,12 +45,13 @@ final readonly class MicroPoster
         }
 
         try {
-            if (count($posters) === 1) {
-                $this->client->sendPhoto($this->chatId, $posters[0], $caption, html: true);
-            } elseif ($posters !== []) {
-                $this->client->sendPhotoGroup($this->chatId, $posters, $caption, html: true);
+            if ($posters === []) {
+                $this->client->sendText($this->chatId, $caption);
+            } elseif ($this->captionLength($caption) <= self::CAPTION_LIMIT) {
+                $this->sendPosters($this->client, $this->chatId, $posters, $caption);
             } else {
-                $this->client->send($this->chatId, new Post($post->title, intro: strip_tags($caption)));
+                $this->sendPosters($this->client, $this->chatId, $posters, '');
+                $this->client->sendText($this->chatId, $caption);
             }
         } catch (TelegramException $e) {
             $io->error($e->getMessage());
@@ -59,5 +62,26 @@ final readonly class MicroPoster
         $io->success($posters !== [] ? 'Posted.' : 'Posted without a poster (text fallback).');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param list<string> $posters
+     *
+     * @throws TelegramException
+     */
+    private function sendPosters(TelegramClient $client, string $chatId, array $posters, string $caption): void
+    {
+        if (count($posters) === 1) {
+            $client->sendPhoto($chatId, $posters[0], $caption, html: true);
+        } else {
+            $client->sendPhotoGroup($chatId, $posters, $caption, html: true);
+        }
+    }
+
+    private function captionLength(string $caption): int
+    {
+        $visible = html_entity_decode(strip_tags($caption), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return intdiv(strlen(mb_convert_encoding($visible, 'UTF-16LE', 'UTF-8')), 2);
     }
 }

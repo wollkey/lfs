@@ -16,6 +16,11 @@ final class RecordingTelegramClient implements TelegramClient
     public array $sent = [];
 
     /**
+     * @var list<array{chatId: string, html: string}>
+     */
+    public array $texts = [];
+
+    /**
      * @var list<array{chatId: string, imagePath: string, caption: string}>
      */
     public array $photos = [];
@@ -42,6 +47,15 @@ final class RecordingTelegramClient implements TelegramClient
         }
 
         $this->sent[] = ['chatId' => $chatId, 'post' => $post];
+    }
+
+    public function sendText(string $chatId, string $html): void
+    {
+        if ($this->fail) {
+            throw new ApiException('simulated failure');
+        }
+
+        $this->texts[] = ['chatId' => $chatId, 'html' => $html];
     }
 
     public function sendPhoto(string $chatId, string $imagePath, string $caption, bool $html = false): void

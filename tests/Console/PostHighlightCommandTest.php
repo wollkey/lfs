@@ -53,7 +53,7 @@ final class PostHighlightCommandTest extends IntegrationTestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         self::assertSame([], $client->photos);
-        self::assertSame([], $client->sent);
+        self::assertSame([], $client->texts);
     }
 
     private function seedRound(): void

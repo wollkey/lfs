@@ -199,6 +199,85 @@ final class MessagesTest extends IntegrationTestCase
         self::assertNull($this->messages()->weeklyHighlight());
     }
 
+    public function testSpotlightTagsThePickerAndListsTheFacts(): void
+    {
+        $this->givenMembers('al1vka', 'christallisme');
+        $this->members->linkTelegram('al1vka', 42);
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('arrival', ['al1vka' => 10, 'christallisme' => 6]);
+        $this->givenFilmRatedBy('tenet', ['al1vka' => 5, 'christallisme' => 4]);
+        $this->givenFilmRatedBy('interstellar', []);
+        $this->rounds->addFilm(1, 'arrival', 'al1vka', 1, '2026-09-07');
+        $this->rounds->addFilm(1, 'tenet', 'al1vka', 2, '2026-09-14');
+        $this->rounds->addFilm(1, 'interstellar', 'al1vka', 3, '2026-09-28');
+
+        $post = $this->messages()->spotlight(new \DateTimeImmutable('2026-09-29'));
+
+        self::assertNotNull($post);
+        self::assertEquals([[new Cell('Al1vka'), new Cell('Interstellar')]], $post->table?->rows);
+        self::assertSame(implode("\n", [
+            '<b>⭐ Неделя славы - <a href="tg://user?id=42">Al1vka</a></b>',
+            'Выбор недели - <b><a href="https://lfs.wollkey.ru/films/interstellar">Interstellar</a></b>',
+            '',
+            '<b>🎬 Выбор фильмов</b>',
+            '<blockquote>Лучший - <b><a href="https://lfs.wollkey.ru/films/arrival">Arrival</a></b> (8.0)',
+            'Худший - <b><a href="https://lfs.wollkey.ru/films/tenet">Tenet</a></b> (4.5)',
+            'Средний рейтинг - 6.3 (по клубу 6.3)</blockquote>',
+            '',
+            '<b>🍿 Оценки</b>',
+            '<blockquote>Всего - 2, средняя 7.5 - на 2.5 выше, чем у клуба',
+            '🌶️ Самая спорная - <b><a href="https://lfs.wollkey.ru/films/arrival">Arrival</a></b> (10 при средней 8.0)</blockquote>',
+            '',
+            '<b>❤️ Любимый фильм - 10 из 10</b>',
+            '<blockquote expandable><b><a href="https://lfs.wollkey.ru/films/arrival">Arrival</a></b></blockquote>',
+        ]), $post->intro);
+    }
+
+    public function testSpotlightOfADebutantWithoutATelegramAccount(): void
+    {
+        $this->givenMembers('christallisme', 'wollkey');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('stalker', ['christallisme' => 7, 'wollkey' => 7]);
+        $this->rounds->addFilm(1, 'stalker', 'wollkey', 1, '2026-09-21');
+        $this->givenFilmRatedBy('solaris', []);
+        $this->rounds->addFilm(1, 'solaris', 'christallisme', 2, '2026-09-28');
+
+        $intro = (string) $this->messages()->spotlight(new \DateTimeImmutable('2026-10-04'))?->intro;
+
+        self::assertStringContainsString('Неделя славы - Christallisme</b>', $intro);
+        self::assertStringContainsString('Первый выбор в клубе - дебют!', $intro);
+        self::assertStringContainsString('Всего - 1, средняя 7.0', $intro);
+        self::assertStringNotContainsString('чем у клуба', $intro);
+        self::assertStringNotContainsString('Самая спорная', $intro);
+    }
+
+    public function testSpotlightListsEveryFavoriteInAnExpandableQuote(): void
+    {
+        $this->givenMembers('al1vka');
+        $this->givenRound(1);
+        foreach (['a', 'b', 'c', 'd', 'e'] as $i => $slug) {
+            $this->givenFilmRatedBy($slug, ['al1vka' => 10]);
+            $this->rounds->addFilm(1, $slug, 'al1vka', $i + 1, '2026-09-0'.($i + 1));
+        }
+        $this->givenFilmRatedBy('latest', []);
+        $this->rounds->addFilm(1, 'latest', 'al1vka', 6, '2026-09-28');
+
+        $intro = (string) $this->messages()->spotlight(new \DateTimeImmutable('2026-09-29'))?->intro;
+
+        self::assertStringContainsString('<b>❤️ Любимые фильмы - 10 из 10</b>', $intro);
+        self::assertSame(5, substr_count((string) strstr($intro, '<blockquote expandable>'), '<a href='));
+    }
+
+    public function testSpotlightReturnsNullWhenNobodyPickedThisWeek(): void
+    {
+        $this->givenMembers('al1vka');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('arrival', []);
+        $this->rounds->addFilm(1, 'arrival', 'al1vka', 1, '2026-09-21');
+
+        self::assertNull($this->messages()->spotlight(new \DateTimeImmutable('2026-09-29')));
+    }
+
     private function seedSummaryRound(): void
     {
         $this->givenMembers('al1vka', 'christallisme', 'koshmarus');

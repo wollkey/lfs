@@ -41,14 +41,27 @@ final readonly class PhptgClient implements TelegramClient
         }
     }
 
+    public function sendText(string $chatId, string $html): void
+    {
+        try {
+            $result = $this->api->sendMessage(chatId: $chatId, text: $html, parseMode: 'HTML');
+        } catch (TelegramRuntimeException $e) {
+            throw new ApiException('Telegram sendMessage failed.', previous: $e);
+        }
+
+        if ($result instanceof FailResult) {
+            throw new ApiException($this->describe('sendMessage', $result));
+        }
+    }
+
     public function sendPhoto(string $chatId, string $imagePath, string $caption, bool $html = false): void
     {
         try {
             $result = $this->api->sendPhoto(
                 chatId: $chatId,
                 photo: new InputFile($imagePath),
-                caption: $caption,
-                parseMode: $html ? 'HTML' : null,
+                caption: $caption !== '' ? $caption : null,
+                parseMode: $html && $caption !== '' ? 'HTML' : null,
             );
         } catch (TelegramRuntimeException $e) {
             throw new ApiException('Telegram sendPhoto failed.', previous: $e);
@@ -65,8 +78,8 @@ final readonly class PhptgClient implements TelegramClient
         foreach (array_values($imagePaths) as $index => $path) {
             $media[] = new InputMediaPhoto(
                 media: new InputFile($path),
-                caption: $index === 0 ? $caption : null,
-                parseMode: $index === 0 && $html ? 'HTML' : null,
+                caption: $index === 0 && $caption !== '' ? $caption : null,
+                parseMode: $index === 0 && $html && $caption !== '' ? 'HTML' : null,
             );
         }
 

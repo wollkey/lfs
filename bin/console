@@ -15,6 +15,7 @@ use App\Console\PostFlashbackCommand;
 use App\Console\PostHighlightCommand;
 use App\Console\PostRoundStandingsCommand;
 use App\Console\PostRoundSummaryCommand;
+use App\Console\PostSpotlightCommand;
 use App\Console\SeedCommand;
 use App\Console\SetWebhookCommand;
 use App\Letterboxd\Parser\ActivityParser;
@@ -36,6 +37,7 @@ use App\Seeding\ScrapedRatings;
 use App\Statistics\Statistics;
 use App\Telegram\Card\CardChrome;
 use App\Telegram\Card\PanelsCard;
+use App\Telegram\Card\SpotlightCard;
 use App\Telegram\Card\StandingsCard;
 use App\Reviewing\ClaudeCodeClassifier;
 use App\Reviewing\Watermark;
@@ -119,6 +121,7 @@ $app->addCommand(new PostRoundSummaryCommand(
 ));
 $app->addCommand(new PostFlashbackCommand($messages, $microPoster));
 $app->addCommand(new PostHighlightCommand($messages, $microPoster));
+$app->addCommand(new PostSpotlightCommand($messages, new SpotlightCard(), $rasterizer, $microPoster));
 $app->addCommand(new SetWebhookCommand($telegramClient, $telegramSecret));
 
 $app->run();
