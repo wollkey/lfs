@@ -49,7 +49,7 @@ final class SeedCommand extends Command
         $this->seedRatings($io, $htmlDir);
         $this->seedPosters($io);
 
-        $io->success('Database up to date. Next: make deploy.');
+        $io->success('Database up to date.');
 
         return Command::SUCCESS;
     }

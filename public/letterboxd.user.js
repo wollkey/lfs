@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LFS scraper
 // @namespace    lfs
-// @version      2.0.0
+// @version      3.0.0
 // @description  Grabs Last Frame Society ratings from Letterboxd and POSTs them to the local dev server.
 // @match        https://letterboxd.com/*
 // @grant        GM_xmlhttpRequest
@@ -85,20 +85,20 @@
         }
 
         ui.progress(steps.length, steps.length);
-        ui.status(failed.length ? `готово, не удалось: ${failed.join(', ')}` : 'готово');
+        ui.status(`${failed.length ? `готово, не удалось: ${failed.join(', ')}` : 'готово'} → теперь make week`);
     }
 
     /**
-     * The weekly update, from any Letterboxd page: the list, every film in it the
-     * database does not know yet, and the activity of every active member.
+     * The weekly download, from any Letterboxd page: the list, every film in it
+     * the database does not know yet, and the activity of every active member.
      */
-    async function weeklyUpdate(ui) {
+    async function downloadNew(ui) {
         ui.status('читаю список…');
         const listHtml = await fetchPage(LIST_URL);
         const listed = listedSlugs(listHtml);
 
         if (listed.length === 0) {
-            ui.status(`в списке 0 фильмов — открой ${LIST_PATH} и нажми «Список»`);
+            ui.status(`в ${LIST_PATH} не нашлось фильмов — разметка Letterboxd поменялась?`);
 
             return;
         }
@@ -120,49 +120,15 @@
         ]);
     }
 
-    async function scrapeFilms(ui) {
+    /**
+     * Every film's friends page — once a round, for scores changed long enough
+     * ago to have dropped out of the activity feed.
+     */
+    async function downloadAll(ui) {
         ui.status('получаю список фильмов…');
         const {films} = await getJson(`${API}/films`);
 
         await execute(ui, films.map(f => ({label: f.slug, run: grab(friendsUrl(f.slug), 'friends', f.slug)})));
-    }
-
-    const filmSlug = () =>
-        location.pathname.match(/^\/film\/([^/]+)\//)?.[1]
-        ?? location.pathname.match(/\/friends\/film\/([^/]+)\//)?.[1]
-        ?? null;
-
-    async function scrapeOneFilm(ui) {
-        const slug = filmSlug() ?? prompt('Slug фильма?')?.trim();
-        if (!slug) {
-            ui.status('открой страницу /film/<slug>/ и нажми снова');
-
-            return;
-        }
-
-        await execute(ui, [{label: slug, run: grab(friendsUrl(slug), 'friends', slug)}]);
-    }
-
-    async function scrapeActivity(ui) {
-        ui.status('получаю участников…');
-        const {members} = await getJson(`${API}/members`);
-        const users = members.filter(m => m.status === 'active').map(m => m.username);
-
-        await execute(ui, users.map(user => ({label: `@${user}`, run: grab(activityUrl(user), 'activity', user)})));
-    }
-
-    // Titles and own ratings only — posters come from each film's public page,
-    // so there is nothing lazy left to scroll into view.
-    async function scrapeList(ui) {
-        if (location.pathname !== LIST_PATH) {
-            ui.status(`открой страницу списка (${LIST_PATH}) и нажми снова`);
-
-            return;
-        }
-
-        ui.status('сохраняю список…');
-        await post('list', '', document.documentElement.outerHTML);
-        ui.status('готово');
     }
 
     function panel() {
@@ -231,11 +197,8 @@
         }
 
         buttons.append(
-            make('Обновить неделю', weeklyUpdate, true),
-            make('Фильм', scrapeOneFilm),
-            make('Список', scrapeList),
-            make('Фильмы', scrapeFilms),
-            make('Активность', scrapeActivity),
+            make('Скачать новое', downloadNew, true),
+            make('Скачать всё', downloadAll),
         );
 
         box.append(title, track, buttons, status);

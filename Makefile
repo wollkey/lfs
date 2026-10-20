@@ -51,6 +51,20 @@ init: ## Create data/, var/logs/ and backups/ directories
 .PHONY: init
 
 ##
+## Weekly
+## ------
+
+## Runs on the host: reviews drive the `claude` CLI. REVIEWS=no leaves them for another day.
+week: ## After «Скачать новое» on Letterboxd: seed, import reviews, deploy
+	@test -n "$$(find data -name '*.html' -mmin -720 2>/dev/null | head -1)" || { \
+		read -p "Nothing downloaded in the last 12 hours — did you press «Скачать новое»? Go on anyway? [y/N] " ok; \
+		[ "$$ok" = y ]; }
+	@$(MAKE) --no-print-directory seed
+	@$(if $(filter no,$(REVIEWS)),,$(MAKE) --no-print-directory reviews)
+	@$(MAKE) --no-print-directory deploy
+.PHONY: week
+
+##
 ## Docker
 ## ------
 
