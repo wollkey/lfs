@@ -1,4 +1,4 @@
-import { letterboxdLink, posterImg, esc } from '../helpers.js';
+import { letterboxdLink, posterImg, posterSrc, esc } from '../helpers.js';
 
 function ratingRow(r) {
     return `
@@ -63,7 +63,7 @@ export async function render(root, params) {
     root.innerHTML = `
     <p><a class="back-link" href="/films">← К списку фильмов</a></p>
     <article class="film-detail">
-      <div class="film-detail__head">
+      <div class="film-detail__head" style="--backdrop: url(${esc(JSON.stringify(posterSrc(film.slug)))})">
         ${posterImg(film, 'poster--lg')}
         <div class="film-detail__meta">
           <h1 class="film-detail__title">${esc(film.title)}</h1>

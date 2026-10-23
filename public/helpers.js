@@ -22,11 +22,15 @@ const posterSizes = {
     'poster--lg': {dir: 'w500', loading: 'eager'},
 };
 
+export function posterSrc(slug, dir = 'w500') {
+    return `/posters/${dir}/${encodeURIComponent(slug)}.jpg`;
+}
+
 export function posterImg(film, className = '') {
     const cls = className ? `poster ${className}` : 'poster';
     const {dir, loading} = posterSizes[className] ?? {dir: 'w500', loading: 'lazy'};
     return `
-    <img class="${cls}" src="/posters/${dir}/${encodeURIComponent(film.slug)}.jpg"
+    <img class="${cls}" src="${posterSrc(film.slug, dir)}"
          alt="${esc(film.title)}" width="125" height="187" loading="${loading}" decoding="async">`;
 }
 
