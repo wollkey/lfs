@@ -5,6 +5,7 @@ let members = null;
 let picks = null;
 let missed = null;
 let currentRound = null;
+let tastes = null;
 
 const SORTS = {
     default: () => 0,
@@ -105,10 +106,62 @@ function missedSection(username) {
     </section>`;
 }
 
+function tasteSection(username) {
+    const matches = tastes[username] ?? [];
+    if (matches.length === 0) return '';
+
+    const tied = (agreement) => matches.filter((m) => m.agreement === agreement);
+    const row = (label, list, value) => `
+      <li class="pick">
+        <span class="pick__title">${label} - ${list.map((m) => esc(m.displayName)).join(', ')}</span>
+        <span class="pick__avg">${value}%</span>
+      </li>`;
+    const closest = matches[0].agreement;
+    const farthest = matches.at(-1).agreement;
+    const rows = row('Близнец', tied(closest), closest)
+        + (farthest === closest ? '' : row('Антипод', tied(farthest), farthest));
+
+    return `
+    <section class="member-block">
+      <h3 class="member-block__title">Вкус</h3>
+      <ul class="pick-list">${rows}</ul>
+    </section>`;
+}
+
+function tasteMap(active) {
+    const mapped = active.filter((m) => (tastes[m.username] ?? []).length > 0);
+    if (mapped.length < 2) return '';
+
+    const head = mapped.map((m) => `<th class="taste-map__col" scope="col">${esc(m.displayName)}</th>`).join('');
+    const rows = mapped.map((row) => {
+        const cells = mapped.map((col) => {
+            if (col.username === row.username) return '<td class="taste-map__cell taste-map__cell--self"></td>';
+            const match = tastes[row.username].find((m) => m.username === col.username);
+            if (match === undefined) return '<td class="taste-map__cell">·</td>';
+            const tip = `${row.displayName} и ${col.displayName}: совпали в ${match.agreement}% из ${pluralWith(match.shared, ['общего фильма', 'общих фильмов', 'общих фильмов'])}`;
+            const strength = Math.min(Math.abs(match.agreement - 50) / 25, 1);
+            return `<td class="taste-map__cell ${match.agreement < 50 ? 'taste-map__cell--opposite' : ''}"
+                style="--strength: ${strength}" title="${esc(tip)}">${match.agreement}</td>`;
+        }).join('');
+        return `<tr><th class="taste-map__row" scope="row">${esc(row.displayName)}</th>${cells}</tr>`;
+    }).join('');
+
+    return `
+    <section class="member-group">
+      <h2 class="member-group__title">Совпадение вкусов <span class="hint" data-tip="Процент общих фильмов, которые обоим понравились или обоим нет - каждому по меркам своей средней оценки.">?</span></h2>
+      <div class="taste-map">
+        <table>
+          <thead><tr><td></td>${head}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
 function memberRow(member) {
     const summary = summaryRow(member);
     const body = member.status === 'active'
-        ? picksSection(member.username) + missedSection(member.username)
+        ? tasteSection(member.username) + picksSection(member.username) + missedSection(member.username)
         : picksSection(member.username);
 
     const key = esc(member.username);
@@ -152,6 +205,7 @@ function draw(root) {
       <div class="sort-group">${sortButtons}</div>
     </div>
     ${group('Участники', active)}
+    ${tasteMap(members.filter((m) => m.status === 'active'))}
     ${group('Бывшие участники', former)}`;
 
     root.querySelectorAll('.sort-btn').forEach((btn) => {
@@ -170,6 +224,7 @@ export async function render(root) {
     picks = data.picks;
     missed = data.missed;
     currentRound = data.currentRound;
+    tastes = data.tastes;
     draw(root);
 
     const target = decodeURIComponent(location.hash.slice(1));

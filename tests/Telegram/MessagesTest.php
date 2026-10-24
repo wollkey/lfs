@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Telegram;
 
 use App\Domain\MemberStatus;
+use App\Statistics\Statistics;
 use App\Telegram\Cell;
 use App\Telegram\Messages;
 use App\Telegram\Post;
@@ -266,6 +267,22 @@ final class MessagesTest extends IntegrationTestCase
 
         self::assertStringContainsString('<b>❤️ Любимые фильмы - 10 из 10</b>', $intro);
         self::assertSame(5, substr_count((string) strstr($intro, '<blockquote expandable>'), '<a href='));
+    }
+
+    public function testSpotlightNamesWhoseTasteMatchesAndWhoseDiffers(): void
+    {
+        $this->givenMembers('al1vka', 'christallisme', 'wollkey');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('arrival', ['al1vka' => 9, 'christallisme' => 8, 'wollkey' => 3]);
+        $this->givenFilmRatedBy('tenet', ['al1vka' => 6, 'christallisme' => 7, 'wollkey' => 8]);
+        $this->givenFilmRatedBy('stalker', ['al1vka' => 5, 'christallisme' => 4, 'wollkey' => 8]);
+        $this->givenFilmRatedBy('latest', []);
+        $this->rounds->addFilm(1, 'latest', 'al1vka', 1, '2026-09-28');
+
+        $messages = new Messages(new Statistics($this->pdo, quorum: 1, minSharedFilms: 3), 'https://lfs.wollkey.ru', '/posters');
+        $intro = (string) $messages->spotlight(new \DateTimeImmutable('2026-09-29'))?->intro;
+
+        self::assertStringContainsString("👯 Вкусовой близнец - Christallisme (67%)\n🥊 Вкусовой антипод - Wollkey (0%)</blockquote>", $intro);
     }
 
     public function testSpotlightReturnsNullWhenNobodyPickedThisWeek(): void

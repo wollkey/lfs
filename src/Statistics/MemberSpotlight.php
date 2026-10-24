@@ -11,6 +11,8 @@ final readonly class MemberSpotlight
      * @param ListedFilm[] $bestPicks
      * @param ListedFilm[] $worstPicks
      * @param ScoredFilm[] $hotTakes
+     * @param TasteMatch[] $closest
+     * @param TasteMatch[] $farthest
      */
     public function __construct(
         public string $username,
@@ -27,6 +29,8 @@ final readonly class MemberSpotlight
         public ?float $averageGiven,
         public ?float $leaning,
         public array $hotTakes,
+        public array $closest,
+        public array $farthest,
     ) {
     }
 }

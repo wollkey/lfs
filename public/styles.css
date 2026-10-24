@@ -275,6 +275,18 @@ body::after {
 .missed-round:not(.missed-round--current) .missed-round__num,
 .missed-round:not(.missed-round--current) .missed__link { color: var(--muted); }
 
+.member-group__title .hint { text-transform: none; letter-spacing: normal; font-weight: 400; }
+
+/* Taste map: one row and one column per active member; amber where they mostly agree, blue where they mostly differ. */
+.taste-map { overflow-x: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+.taste-map table { border-collapse: separate; border-spacing: 3px; margin: 0 auto; }
+.taste-map__row { padding-right: 0.6rem; text-align: right; font-weight: 500; font-size: 0.85rem; white-space: nowrap; }
+.taste-map__col { padding-bottom: 0.4rem; vertical-align: bottom; font-weight: 500; font-size: 0.8rem; color: var(--muted); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; }
+.taste-map__cell { width: 2.4rem; height: 2.4rem; border-radius: 4px; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--text); background: rgba(224, 160, 77, calc(var(--strength, 0) * 0.85)); }
+.taste-map__cell--opposite { background: rgba(110, 145, 210, calc(var(--strength) * 0.85)); }
+.taste-map__cell--self { background: var(--border); }
+.taste-map__cell:not([style]) { color: var(--muted); }
+
 /* Compact "number over label" stat — both member stats share it, so they align. */
 .stat-mini { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
 .stat-mini__num { font-size: 1.35rem; font-weight: 700; line-height: 1; }
@@ -456,6 +468,9 @@ body::after {
     .film, .member__row { padding: 0.75rem 0.9rem; gap: 0.75rem; }
     .film__stats { gap: 0.75rem; }
     .member__stats { gap: 1rem; }
+    .taste-map { padding: 0.75rem 0.5rem; }
+    .taste-map__cell { width: 1.9rem; height: 1.9rem; font-size: 0.7rem; }
+    .taste-map__row { font-size: 0.75rem; padding-right: 0.3rem; }
     /* Правые подписи компактнее — правая колонка уже, нику слева просторнее. */
     .stat-mini__label { font-size: 0.6rem; }
 

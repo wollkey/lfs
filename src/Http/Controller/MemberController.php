@@ -19,6 +19,7 @@ final readonly class MemberController
      *     picks: array<string, mixed>,
      *     missed: array<string, mixed>,
      *     currentRound: int|null,
+     *     tastes: array<string, mixed>,
      *  }
      */
     public function __invoke(): array
@@ -28,6 +29,7 @@ final readonly class MemberController
             'picks' => $this->stats->picksByMember(),
             'missed' => $this->stats->missedByMember(),
             'currentRound' => $this->stats->currentRound(),
+            'tastes' => $this->stats->tasteMatches(),
         ];
     }
 }

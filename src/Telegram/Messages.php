@@ -16,6 +16,7 @@ use App\Statistics\RoundPick;
 use App\Statistics\RoundSummary;
 use App\Statistics\ScoredFilm;
 use App\Statistics\Statistics;
+use App\Statistics\TasteMatch;
 
 final readonly class Messages
 {
@@ -270,7 +271,22 @@ final readonly class Messages
             ));
         }
 
+        if ($s->closest !== []) {
+            $lines[] = sprintf('👯 Вкусовой близнец - %s (%d%%)', $this->matchNames($s->closest), $s->closest[0]->agreement);
+        }
+        if ($s->farthest !== []) {
+            $lines[] = sprintf('🥊 Вкусовой антипод - %s (%d%%)', $this->matchNames($s->farthest), $s->farthest[0]->agreement);
+        }
+
         return $lines;
+    }
+
+    /**
+     * @param TasteMatch[] $matches
+     */
+    private function matchNames(array $matches): string
+    {
+        return $this->esc(implode(', ', array_map(static fn (TasteMatch $m): string => $m->displayName, $matches)));
     }
 
     /**

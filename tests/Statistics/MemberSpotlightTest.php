@@ -7,6 +7,7 @@ namespace App\Tests\Statistics;
 use App\Statistics\ListedFilm;
 use App\Statistics\ScoredFilm;
 use App\Statistics\Statistics;
+use App\Statistics\TasteMatch;
 use App\Tests\Common\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -42,6 +43,33 @@ final class MemberSpotlightTest extends IntegrationTestCase
         self::assertSame(8.7, $spotlight->averageGiven);
         self::assertSame(1.8, $spotlight->leaning);
         self::assertSame(['arrival'], $this->slugs($spotlight->hotTakes));
+    }
+
+    public function testFindsWhoseTasteIsClosestAndFarthest(): void
+    {
+        $this->seedPicks();
+
+        $spotlight = new Statistics($this->pdo, quorum: 3, minSharedFilms: 3)->pickerSpotlight('2026-09-28', '2026-10-04');
+
+        self::assertNotNull($spotlight);
+        self::assertEquals([new TasteMatch('wollkey', 'Wollkey', 100, 3)], $spotlight->closest);
+        self::assertEquals([new TasteMatch('christallisme', 'Christallisme', 67, 3)], $spotlight->farthest);
+    }
+
+    public function testASingleMatchIsTheClosestButNotAlsoTheFarthest(): void
+    {
+        $this->givenMembers('al1vka', 'christallisme');
+        $this->givenRound(1);
+        $this->givenFilmRatedBy('arrival', ['al1vka' => 9, 'christallisme' => 7]);
+        $this->givenFilmRatedBy('tenet', ['al1vka' => 5, 'christallisme' => 4]);
+        $this->givenFilmRatedBy('interstellar', []);
+        $this->rounds->addFilm(1, 'interstellar', 'al1vka', 1, '2026-09-28');
+
+        $spotlight = new Statistics($this->pdo, minSharedFilms: 2)->pickerSpotlight('2026-09-28', '2026-10-04');
+
+        self::assertNotNull($spotlight);
+        self::assertSame(['christallisme'], array_map(static fn (TasteMatch $m): string => $m->username, $spotlight->closest));
+        self::assertSame([], $spotlight->farthest);
     }
 
     public function testThisWeeksPickNeverCountsAsABestOrWorstPick(): void

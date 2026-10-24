@@ -8,6 +8,7 @@ use App\Domain\MemberStatus;
 use App\Statistics\ListedFilm;
 use App\Statistics\MemberStats;
 use App\Statistics\Statistics;
+use App\Statistics\TasteMatch;
 use App\Tests\Common\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -195,6 +196,53 @@ final class StatisticsTest extends IntegrationTestCase
         $rounds = $this->statistics()->rounds();
 
         self::assertNull($rounds[0]->winner);
+    }
+
+    public function testTasteMatchesCountTheFilmsBothLikedOrBothDisliked(): void
+    {
+        $this->givenMembers('al1vka', 'christallisme', 'wollkey');
+        $this->givenFilmRatedBy('arrival', ['al1vka' => 9, 'christallisme' => 8, 'wollkey' => 3]);
+        $this->givenFilmRatedBy('tenet', ['al1vka' => 7, 'christallisme' => 7, 'wollkey' => 5]);
+        $this->givenFilmRatedBy('stalker', ['al1vka' => 5, 'christallisme' => 4, 'wollkey' => 8]);
+        $this->givenFilmRatedBy('solaris', ['al1vka' => 3, 'wollkey' => 9]);
+
+        $matches = new Statistics($this->pdo, minSharedFilms: 3)->tasteMatches();
+
+        self::assertEquals([
+            new TasteMatch('christallisme', 'Christallisme', 100, 3),
+            new TasteMatch('wollkey', 'Wollkey', 0, 4),
+        ], $matches['al1vka']);
+        self::assertEquals([
+            new TasteMatch('al1vka', 'Al1vka', 100, 3),
+            new TasteMatch('wollkey', 'Wollkey', 0, 3),
+        ], $matches['christallisme']);
+    }
+
+    public function testTasteMatchesJudgeEachScoreByTheMembersOwnAverage(): void
+    {
+        $this->givenMembers('christallisme', 'koshmarus');
+        $this->givenFilmRatedBy('arrival', ['christallisme' => 10, 'koshmarus' => 7]);
+        $this->givenFilmRatedBy('tenet', ['christallisme' => 7, 'koshmarus' => 3]);
+        $this->givenFilmRatedBy('stalker', ['christallisme' => 9, 'koshmarus' => 6]);
+
+        $matches = new Statistics($this->pdo, minSharedFilms: 3)->tasteMatches();
+
+        self::assertSame(100, $matches['christallisme'][0]->agreement);
+    }
+
+    public function testTasteMatchesSkipFormerMembersAndFewSharedFilms(): void
+    {
+        $this->givenMembers('al1vka', 'christallisme', 'wollkey');
+        $this->givenMember('lenka_penka', MemberStatus::Former);
+        $this->givenFilmRatedBy('arrival', ['al1vka' => 9, 'christallisme' => 8, 'wollkey' => 3, 'lenka_penka' => 9]);
+        $this->givenFilmRatedBy('tenet', ['al1vka' => 7, 'christallisme' => 7, 'wollkey' => 5, 'lenka_penka' => 7]);
+        $this->givenFilmRatedBy('stalker', ['al1vka' => 5, 'christallisme' => 4, 'lenka_penka' => 5]);
+
+        $matches = new Statistics($this->pdo, minSharedFilms: 3)->tasteMatches();
+
+        self::assertSame(['christallisme'], array_map(static fn (TasteMatch $m): string => $m->username, $matches['al1vka']));
+        self::assertSame([], $matches['wollkey']);
+        self::assertArrayNotHasKey('lenka_penka', $matches);
     }
 
     /**

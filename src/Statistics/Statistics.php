@@ -13,6 +13,7 @@ final readonly class Statistics
         private int $quorum = 5,
         private int $minCuratorPicks = 2,
         private int $minCriticRatings = 20,
+        private int $minSharedFilms = 15,
     ) {
     }
 
@@ -517,6 +518,11 @@ final readonly class Statistics
         $rated = $this->ratingsOf($username);
         $scores = array_map(static fn (array $r): int => $r['film']->score, $rated);
 
+        $matches = $this->tasteMatches()[$username] ?? [];
+        $agreement = static fn (TasteMatch $m): int => $m->agreement;
+        $closest = $this->ties($matches, $agreement, true);
+        $farthest = $this->ties($matches, $agreement, false);
+
         $leanings = [];
         foreach ($rated as $r) {
             if ($r['others'] !== null) {
@@ -539,7 +545,58 @@ final readonly class Statistics
             $scores === [] ? null : round(array_sum($scores) / count($scores), 1),
             $leanings === [] ? null : round(array_sum($leanings) / count($leanings), 1),
             $this->hotTakesOf($rated),
+            $closest,
+            $farthest === $closest ? [] : $farthest,
         );
+    }
+
+    /**
+     * For every two active members, the share of the films both rated on which they agreed:
+     * each scored it above their own average, or each below. Generous and strict raters
+     * still agree when they liked the same film.
+     *
+     * @return array<string, TasteMatch[]>
+     */
+    public function tasteMatches(): array
+    {
+        $rows = $this->pdo->query(<<<SQL
+                SELECT m.username, m.display_name, r.film_slug, r.score
+                FROM members m
+                JOIN ratings r ON r.member_username = m.username
+                WHERE m.status = 'active'
+                ORDER BY m.position NULLS LAST, m.display_name
+            SQL)->fetchAll();
+
+        $names = [];
+        $scores = [];
+        foreach ($rows as $r) {
+            $names[$r['username']] = $r['display_name'];
+            $scores[$r['username']][$r['film_slug']] = (int) $r['score'];
+        }
+
+        $averages = array_map(static fn (array $s): float => array_sum($s) / count($s), $scores);
+
+        $matches = [];
+        foreach ($scores as $member => $mine) {
+            $matches[$member] = [];
+            foreach ($scores as $other => $theirs) {
+                $shared = array_intersect_key($mine, $theirs);
+                if ($member === $other || count($shared) < max(1, $this->minSharedFilms)) {
+                    continue;
+                }
+
+                $agreed = 0;
+                foreach ($shared as $slug => $score) {
+                    if (($score - $averages[$member]) * ($theirs[$slug] - $averages[$other]) > 0) {
+                        ++$agreed;
+                    }
+                }
+                $matches[$member][] = new TasteMatch($other, $names[$other], (int) round($agreed / count($shared) * 100), count($shared));
+            }
+            usort($matches[$member], static fn (TasteMatch $a, TasteMatch $b): int => $b->agreement <=> $a->agreement);
+        }
+
+        return $matches;
     }
 
     /**
