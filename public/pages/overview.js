@@ -1,4 +1,4 @@
-import {posterImg, letterboxdLink, pluralWith, plural, esc, filmUrl} from '../helpers.js';
+import {posterImg, posterSrc, letterboxdLink, pluralWith, plural, esc, filmUrl} from '../helpers.js';
 
 function num(value) {
     return value === null ? '—' : value;
@@ -34,7 +34,7 @@ function filmCard([one, many], films, statLabel = null) {
     }
 
     return `
-    <article class="card">
+    <article class="card card--film" style="--backdrop: url(${esc(JSON.stringify(posterSrc(films[0].slug)))})">
       <p class="card__label">${films.length > 1 ? many : one}</p>
       <div class="card__films">${films.map((f) => filmBlock(f, statLabel)).join('')}</div>
     </article>`;

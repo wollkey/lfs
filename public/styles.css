@@ -41,6 +41,18 @@ body {
     color: var(--text);
 }
 
+/* Projector light: a warm haze falling from above the nav, edges sinking into a vignette. */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 70% 40% at 50% -8%, rgba(224, 160, 77, 0.09), transparent 70%),
+        radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+}
+
 /* Film grain: a fixed noise tile over everything, barely visible. */
 body::after {
     content: '';
@@ -121,7 +133,26 @@ body::after {
 .stat__label { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
 .cards { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0; }
-.card { flex: 1; min-width: 200px; padding: 1.25rem 1.5rem; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+.card {
+    flex: 1;
+    min-width: 200px;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(180deg, #1b1b20 0%, #141418 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 32px -14px rgba(0, 0, 0, 0.8);
+}
+/* The film's own poster, far quieter than on the film page, tints its card. */
+.card--film { position: relative; isolation: isolate; overflow: hidden; }
+.card--film::before {
+    content: '';
+    position: absolute;
+    inset: -40px;
+    z-index: -1;
+    background: var(--backdrop) center 30% / cover no-repeat;
+    filter: blur(40px) brightness(0.3) saturate(1.2);
+    opacity: 0.7;
+}
 .card__label { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .card__title { margin: 0 0 0.5rem; font-family: var(--serif); font-size: 1.45rem; font-weight: 600; line-height: 1.15; }
 .card__avg { font-size: 2rem; font-weight: 700; color: var(--accent); }
