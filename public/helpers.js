@@ -8,6 +8,25 @@ export function filmUrl(slug) {
     return `/films/${encodeURIComponent(slug)}`;
 }
 
+export function memberUrl(username) {
+    return `/members#${encodeURIComponent(username)}`;
+}
+
+export function roundUrl(number) {
+    return `/rounds#${number}`;
+}
+
+export function roundLink(number) {
+    return `<a class="round-link" href="${roundUrl(number)}">Круг ${number}</a>`;
+}
+
+// Opens the linked round or member, brings it into view and briefly lights it up.
+export function spotlight(el) {
+    if (el instanceof HTMLDetailsElement) el.open = true;
+    el.scrollIntoView({ block: 'center' });
+    el.classList.add('spotlight');
+}
+
 export function letterboxdUrl(username) {
     return `https://letterboxd.com/${encodeURIComponent(username)}/`;
 }

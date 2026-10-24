@@ -1,4 +1,4 @@
-import { letterboxdLink, plural, pluralWith, esc, filmUrl } from '../helpers.js';
+import { letterboxdLink, plural, pluralWith, esc, filmUrl, roundUrl, spotlight } from '../helpers.js';
 
 let sortMode = 'default';
 let members = null;
@@ -90,7 +90,7 @@ function missedSection(username) {
         return `
         <div class="missed-round ${isCurrent ? 'missed-round--current' : ''}">
           <div class="missed-round__head">
-            <span class="missed-round__num">Круг ${round}</span>
+            <a class="missed-round__num" href="${roundUrl(round)}">Круг ${round}</a>
             ${isCurrent ? `<span class="missed-round__badge">текущий</span>` : ''}
             <span class="missed-round__count">${pluralWith(list.length, ['фильм', 'фильма', 'фильмов'])}</span>
           </div>
@@ -111,13 +111,15 @@ function memberRow(member) {
         ? picksSection(member.username) + missedSection(member.username)
         : picksSection(member.username);
 
+    const key = esc(member.username);
+
     if (body === '') {
-        return `<li><div class="member"><div class="member__row">${summary}</div></div></li>`;
+        return `<li><div class="member" data-member="${key}"><div class="member__row">${summary}</div></div></li>`;
     }
 
     return `
     <li>
-      <details class="member">
+      <details class="member" data-member="${key}">
         <summary class="member__row member__row--toggle">${summary}</summary>
         <div class="member__body">${body}</div>
       </details>
@@ -169,4 +171,8 @@ export async function render(root) {
     missed = data.missed;
     currentRound = data.currentRound;
     draw(root);
+
+    const target = decodeURIComponent(location.hash.slice(1));
+    const member = [...root.querySelectorAll('.member')].find((el) => el.dataset.member === target);
+    if (member !== undefined) spotlight(member);
 }

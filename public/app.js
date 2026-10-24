@@ -46,13 +46,19 @@ function renderCurrent() {
     highlightNav(path);
 
     if (matched === null) {
-        view.innerHTML = `<p class="error">Страница не найдена: ${esc(path)}</p>`;
-        return;
+        view.innerHTML = `
+        <section class="film-break">
+          <div class="film-break__frame"></div>
+          <h1 class="film-break__title">Плёнка оборвалась</h1>
+          <p class="film-break__text">Киномеханик уже чинит. А пока — <a href="/">на главную</a>.</p>
+          <p class="film-break__path">${esc(path)}</p>
+        </section>`;
+        return Promise.resolve();
     }
 
     const timer = setTimeout(() => view.classList.add('view--loading'), 200);
 
-    Promise.resolve(matched.render(view, matched.params))
+    return Promise.resolve(matched.render(view, matched.params))
         .catch((err) => {
             console.error(err);
             view.innerHTML = `<p class="error">Не удалось загрузить данные</p>`;
@@ -63,10 +69,25 @@ function renderCurrent() {
         });
 }
 
-function navigate(path) {
-    if (path === location.pathname) return;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+// The clicked film's poster carries over into the film page header.
+function transition(update, poster = null) {
+    if (!document.startViewTransition || reducedMotion.matches) {
+        update();
+        return;
+    }
+    if (poster !== null) poster.style.viewTransitionName = 'poster';
+    document.startViewTransition(update);
+}
+
+function navigate(path, poster) {
+    if (path === location.pathname + location.hash) return;
     history.pushState(null, '', path);
-    renderCurrent();
+    transition(() => {
+        window.scrollTo(0, 0);
+        return renderCurrent();
+    }, poster);
 }
 
 document.addEventListener('click', (event) => {
@@ -79,7 +100,23 @@ document.addEventListener('click', (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     event.preventDefault();
-    navigate(url.pathname);
+    const poster = url.pathname.startsWith('/films/')
+        ? link.closest('.film, .card__body')?.querySelector('.poster') ?? null
+        : null;
+    navigate(url.pathname + url.hash, poster);
+});
+
+const pageTitle = document.title;
+let titleTimer = null;
+
+document.addEventListener('visibilitychange', () => {
+    clearTimeout(titleTimer);
+    if (document.hidden) {
+        document.title = `Антракт · ${pageTitle}`;
+        return;
+    }
+    document.title = `Сеанс продолжается · ${pageTitle}`;
+    titleTimer = setTimeout(() => { document.title = pageTitle; }, 2000);
 });
 
 document.addEventListener('error', (event) => {
@@ -90,6 +127,6 @@ document.addEventListener('error', (event) => {
     img.src = '/posters/_placeholder.svg';
 }, true);
 
-window.addEventListener('popstate', renderCurrent);
+window.addEventListener('popstate', () => transition(renderCurrent));
 
 renderCurrent();

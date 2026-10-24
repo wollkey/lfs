@@ -1,4 +1,4 @@
-import {letterboxdLink, plural, posterImg, esc, filmUrl} from '../helpers.js';
+import {letterboxdLink, plural, posterImg, esc, filmUrl, spotlight} from '../helpers.js';
 
 let chart = null;
 let sortMode = 'position';
@@ -175,4 +175,7 @@ export async function render(root) {
     if (!response.ok) throw new Error(`API статус ${response.status}`);
     rounds = (await response.json()).rounds;
     draw(root);
+
+    const round = root.querySelector(`.round[data-round="${Number(location.hash.slice(1))}"]`);
+    if (round !== null) spotlight(round);
 }

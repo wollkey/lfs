@@ -12,7 +12,116 @@ final readonly class Statistics
         private \PDO $pdo,
         private int $quorum = 5,
         private int $minCuratorPicks = 2,
+        private int $minCriticRatings = 20,
     ) {
+    }
+
+    public function facts(): ClubFacts
+    {
+        $critics = array_map(
+            static fn (array $r) => new MemberFigure($r['username'], $r['display_name'], round((float) $r['value'], 1)),
+            $this->pdo->query(<<<SQL
+                    SELECT m.username, m.display_name, AVG(r.score) AS value
+                    FROM ratings r
+                    JOIN members m ON m.username = r.member_username
+                    GROUP BY m.username
+                    HAVING COUNT(*) >= {$this->minCriticRatings}
+                SQL)->fetchAll(),
+        );
+        $criticAverage = static fn (MemberFigure $m): int|float => $m->value;
+
+        $rounds = $this->pdo->query(<<<SQL
+                SELECT rd.number, AVG(r.score) AS average,
+                       CAST(julianday(rd.ended_on) - julianday(rd.started_on) AS INTEGER) AS days
+                FROM rounds rd
+                JOIN round_films rf ON rf.round_number = rd.number
+                JOIN ratings r      ON r.film_slug    = rf.film_slug
+                WHERE rd.ended_on IS NOT NULL
+                GROUP BY rd.number
+            SQL)->fetchAll();
+        $roundAverages = array_map(static fn (array $r) => new RoundFigure((int) $r['number'], round((float) $r['average'], 1)), $rounds);
+        $roundLengths = array_map(
+            static fn (array $r) => new RoundFigure((int) $r['number'], (int) $r['days']),
+            array_filter($rounds, static fn (array $r): bool => $r['days'] !== null),
+        );
+        $roundValue = static fn (RoundFigure $r): int|float => $r->value;
+        $comparable = count($roundAverages) >= 2;
+
+        $films = $this->pdo->query(<<<SQL
+                SELECT f.slug, f.title,
+                       SUM(r.score = 10) AS tens, SUM(r.score = 1) AS ones,
+                       MIN(r.score) AS lowest, MAX(r.score) AS highest
+                FROM ratings r
+                JOIN films f ON f.slug = r.film_slug
+                GROUP BY f.slug
+            SQL)->fetchAll();
+        $tens = array_map(static fn (array $f) => new FilmFigure($f['slug'], $f['title'], (int) $f['tens']), $films);
+        $ones = array_map(static fn (array $f) => new FilmFigure($f['slug'], $f['title'], (int) $f['ones']), $films);
+        $filmValue = static fn (FilmFigure $f): int|float => $f->value;
+        $scored = static fn (FilmFigure $f): bool => $f->value > 0;
+
+        $leastWatched = array_map(
+            static fn (array $r) => new FilmFigure($r['slug'], $r['title'], (int) $r['votes']),
+            $this->pdo->query(<<<SQL
+                    SELECT f.slug, f.title, COUNT(r.score) AS votes
+                    FROM round_films rf
+                    JOIN rounds rd      ON rd.number   = rf.round_number
+                    JOIN films f        ON f.slug      = rf.film_slug
+                    LEFT JOIN ratings r ON r.film_slug = rf.film_slug
+                    WHERE rd.ended_on IS NOT NULL
+                    GROUP BY rf.round_number, rf.film_slug
+                SQL)->fetchAll(),
+        );
+
+        $pickers = array_map(
+            static fn (array $r) => new MemberFigure($r['username'], $r['display_name'], round((float) $r['value'], 1)),
+            $this->pdo->query(<<<SQL
+                    SELECT m.username, m.display_name, AVG(p.votes) AS value
+                    FROM (
+                        SELECT rf.picked_by, COUNT(r.score) AS votes
+                        FROM round_films rf
+                        JOIN rounds rd      ON rd.number   = rf.round_number
+                        LEFT JOIN ratings r ON r.film_slug = rf.film_slug
+                        WHERE rd.ended_on IS NOT NULL
+                        GROUP BY rf.round_number, rf.film_slug
+                    ) p
+                    JOIN members m ON m.username = p.picked_by
+                    GROUP BY m.username
+                    HAVING COUNT(*) >= {$this->minCuratorPicks}
+                SQL)->fetchAll(),
+        );
+        $memberValue = static fn (MemberFigure $m): int|float => $m->value;
+
+        $reviewers = array_map(
+            static fn (array $r) => new MemberFigure($r['username'], $r['display_name'], (int) $r['reviews']),
+            $this->pdo->query(<<<SQL
+                    SELECT m.username, m.display_name, COUNT(*) AS reviews
+                    FROM reviews rv
+                    JOIN members m ON m.username = rv.member_username
+                    GROUP BY m.username
+                SQL)->fetchAll(),
+        );
+
+        return new ClubFacts(
+            $this->ties($critics, $criticAverage, false),
+            $this->ties($critics, $criticAverage, true),
+            $comparable ? $this->ties($roundAverages, $roundValue, true) : [],
+            $comparable ? $this->ties($roundAverages, $roundValue, false) : [],
+            $this->ties($roundLengths, $roundValue, true),
+            (int) array_sum(array_column($films, 'tens')),
+            $this->ties(array_filter($tens, $scored), $filmValue, true),
+            (int) array_sum(array_column($films, 'ones')),
+            $this->ties(array_filter($ones, $scored), $filmValue, true),
+            array_values(array_map(
+                static fn (array $f) => new FilmName($f['slug'], $f['title']),
+                array_filter($films, static fn (array $f): bool => (int) $f['lowest'] === 1 && (int) $f['highest'] === 10),
+            )),
+            $this->completionists(),
+            $this->ties($leastWatched, $filmValue, false),
+            $this->ties($pickers, $memberValue, true),
+            $this->ties($reviewers, $memberValue, true),
+            $this->allTimeHotTakes(),
+        );
     }
 
     public function overview(): Overview
@@ -431,6 +540,93 @@ final readonly class Statistics
             $leanings === [] ? null : round(array_sum($leanings) / count($leanings), 1),
             $this->hotTakesOf($rated),
         );
+    }
+
+    /**
+     * Active members who rated every film of every finished round.
+     *
+     * @return MemberName[]
+     */
+    private function completionists(): array
+    {
+        return array_map(
+            static fn (array $r) => new MemberName($r['username'], $r['display_name']),
+            $this->pdo->query(<<<SQL
+                    WITH finished AS (
+                        SELECT rf.film_slug
+                        FROM round_films rf
+                        JOIN rounds rd ON rd.number = rf.round_number
+                        WHERE rd.ended_on IS NOT NULL
+                    )
+                    SELECT m.username, m.display_name
+                    FROM members m
+                    WHERE m.status = 'active'
+                      AND EXISTS (SELECT 1 FROM finished)
+                      AND NOT EXISTS (
+                        SELECT 1 FROM finished fi
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM ratings r
+                            WHERE r.film_slug = fi.film_slug AND r.member_username = m.username
+                        )
+                      )
+                    ORDER BY m.display_name
+                SQL)->fetchAll(),
+        );
+    }
+
+    /**
+     * @return HotTake[]
+     */
+    private function allTimeHotTakes(): array
+    {
+        $takes = array_map(
+            static fn (array $r) => new HotTake(
+                $r['display_name'],
+                $r['title'],
+                (int) $r['score'],
+                round((float) $r['film_average'], 1),
+            ),
+            $this->pdo->query(<<<SQL
+                    SELECT m.display_name, f.title, r.score, a.average AS film_average
+                    FROM ratings r
+                    JOIN films f   ON f.slug     = r.film_slug
+                    JOIN members m ON m.username = r.member_username
+                    JOIN (
+                        SELECT film_slug, AVG(score) AS average, COUNT(*) AS votes
+                        FROM ratings
+                        GROUP BY film_slug
+                    ) a ON a.film_slug = r.film_slug
+                    WHERE a.votes >= {$this->quorum}
+                    ORDER BY m.display_name
+                SQL)->fetchAll(),
+        );
+
+        $deviation = static fn (HotTake $t): float => abs($t->score - $t->filmAverage);
+        $takes = $this->ties($takes, $deviation, true);
+
+        return $takes !== [] && $deviation($takes[0]) > 0.0 ? $takes : [];
+    }
+
+    /**
+     * Every item that shares the highest (or lowest) value.
+     *
+     * @template T
+     *
+     * @param T[]                      $items
+     * @param callable(T): (int|float) $metric
+     *
+     * @return list<T>
+     */
+    private function ties(array $items, callable $metric, bool $highest): array
+    {
+        if ($items === []) {
+            return [];
+        }
+
+        $values = array_map($metric, $items);
+        $target = $highest ? max($values) : min($values);
+
+        return array_values(array_filter($items, static fn ($item): bool => $metric($item) === $target));
     }
 
     private function clubPicksAverage(): ?float

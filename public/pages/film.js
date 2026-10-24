@@ -1,10 +1,10 @@
-import { letterboxdLink, posterImg, posterSrc, esc } from '../helpers.js';
+import { letterboxdLink, posterImg, posterSrc, esc, memberUrl, roundLink } from '../helpers.js';
 
 function ratingRow(r) {
     return `
     <li class="rating">
       <div class="rating__who">
-        <span class="rating__name">${esc(r.displayName)}</span>
+        <a class="rating__name" href="${memberUrl(r.username)}">${esc(r.displayName)}</a>
         ${letterboxdLink(r.username)}
       </div>
       <div class="rating__bar"><span class="rating__fill" style="width: ${r.score * 10}%"></span></div>
@@ -16,7 +16,7 @@ function reviewCard(r) {
     return `
     <li class="review">
       <div class="review__who">
-        <span class="review__name">${esc(r.displayName)}</span>
+        <a class="review__name" href="${memberUrl(r.username)}">${esc(r.displayName)}</a>
         <span class="review__score">${r.score === null ? '—' : r.score}</span>
       </div>
       <p class="review__body">${esc(r.body)}</p>
@@ -35,7 +35,7 @@ export async function render(root, params) {
     const film = await response.json();
 
     const parts = [];
-    if (film.round !== null)    parts.push(`Круг ${film.round}`);
+    if (film.round !== null)    parts.push(roundLink(film.round));
     if (film.pickedBy !== null) parts.push(`выбрал ${letterboxdLink(film.pickedBy)}`);
     const sub = parts.join(' · ');
 
@@ -83,4 +83,6 @@ export async function render(root, params) {
 
       ${reviewsHtml}
     </article>`;
+
+    await root.querySelector('.poster--lg').decode().catch(() => {});
 }

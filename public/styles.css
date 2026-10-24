@@ -76,10 +76,11 @@ body::after {
 
 /* ── Overview hero: totals + mascot ── */
 .hero {
-    display: flex;
-    align-items: flex-end;                /* mascot rests on the block's floor */
-    justify-content: space-between;
-    gap: 1.5rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "text speech cast";
+    align-items: end;                     /* mascot rests on the block's floor */
+    column-gap: 2rem;
     padding: 1.5rem 2rem 0;               /* no bottom padding: mascot bleeds to the edge */
     /* Faint warm glow near the mascot, over a soft dark gradient. */
     background:
@@ -89,7 +90,22 @@ body::after {
     border-radius: 16px;
     overflow: hidden;
 }
-.hero__mascot { flex-shrink: 0; align-self: flex-end; display: block; height: 180px; width: auto; }
+.hero__mascot { display: block; height: 180px; width: auto; }
+.hero__cast { grid-area: cast; }
+.hero__mascot-btn { display: block; padding: 0; border: none; background: none; cursor: pointer; }
+.hero__mascot-btn:focus-visible { outline-offset: -2px; }
+.hero__mascot { transition: filter 0.2s; }
+.hero__mascot-btn:hover .hero__mascot { filter: brightness(1.1) drop-shadow(0 0 18px rgba(224, 160, 77, 0.25)); }
+
+/* The mascot's line, typed out beside him like dialogue in a screenplay. */
+.hero__speech { grid-area: speech; align-self: center; justify-self: end; max-width: 340px; padding-bottom: 1.5rem; text-align: right; }
+.hero__line { margin: 0; font-family: var(--serif); font-size: 1.35rem; font-weight: 500; line-height: 1.3; color: var(--text); }
+.hero__line--idle { color: var(--muted); }
+.hero__caret { display: inline-block; width: 2px; height: 1em; margin-left: 3px; vertical-align: -0.12em; background: var(--accent); animation: caret 1s steps(1) infinite; }
+.hero__line--typing .hero__caret { animation: none; }
+@keyframes caret { 50% { opacity: 0; } }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 /* Opening of the overview: the hero fades up from black, the mascot rises into frame,
    then the card rows follow one by one. Plays on every visit, skipped for reduced motion. */
@@ -100,11 +116,50 @@ body::after {
 .hero__mascot { animation: rise-into-frame 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
 .rise { animation: rise 0.6s ease-out calc(0.25s + var(--i) * 0.08s) both; }
 @media (prefers-reduced-motion: reduce) {
-    .hero, .hero__mascot, .rise { animation: none; }
+    .hero, .hero__mascot, .rise, .hero__caret { animation: none; }
+}
+
+/* Page changes cross-fade like a cut; a film's poster flies into the film page header. */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 0.25s; }
+::view-transition-group(poster) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+::view-transition-old(poster),
+::view-transition-new(poster) { height: 100%; }
+
+/* ── 404: the film burns through in the projector ── */
+.film-break { max-width: 560px; margin: 3rem auto; text-align: center; }
+.film-break__frame {
+    position: relative;
+    aspect-ratio: 2.39 / 1;
+    margin-bottom: 2rem;
+    background: #050506;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px var(--border);
+    overflow: hidden;
+}
+.film-break__frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 78% 28%, #fff6e0 0%, #f2b45a 9%, #b4501e 20%, rgba(80, 20, 5, 0.6) 30%, transparent 42%),
+        radial-gradient(circle at 62% 46%, rgba(242, 180, 90, 0.35), transparent 22%);
+    transform-origin: 78% 28%;
+    animation: burn 2.5s cubic-bezier(0.3, 0, 0.2, 1) both, flicker 3s 2.5s ease-in-out infinite;
+}
+@keyframes burn { from { transform: scale(0.15); opacity: 0; } }
+@keyframes flicker { 50% { opacity: 0.82; } }
+.film-break__title { margin: 0 0 0.5rem; font-family: var(--serif); font-size: 2.4rem; font-weight: 600; }
+.film-break__text { margin: 0 0 1rem; color: var(--muted); }
+.film-break__text a { color: var(--accent); }
+.film-break__path { margin: 0; color: var(--muted); font-size: 0.8rem; opacity: 0.6; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+    .film-break__frame::before { animation: none; }
 }
 
 /* Left column fills the block height: tagline at the top, totals at the bottom. */
 .hero__text {
+    grid-area: text;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -129,6 +184,9 @@ body::after {
 
 .totals { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 2rem 0; }
 .stat { display: flex; flex-direction: column; }
+.stat--link { color: inherit; text-decoration: none; }
+.stat--link .stat__label { transition: color 0.15s; }
+.stat--link:hover .stat__label { color: var(--accent); }
 .stat__num { font-size: 2.5rem; font-weight: 700; }
 .stat__label { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
@@ -166,7 +224,8 @@ body::after {
 
 .nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: baseline; gap: 1.5rem; margin: 0 -2rem 2.5rem; padding: 1.25rem 2rem; background: rgba(14, 14, 16, 0.72); backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); border-bottom: 1px solid var(--border); }
 .nav::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%); }
-.nav__brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; letter-spacing: 0.03em; margin-right: auto; }
+.nav__brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; letter-spacing: 0.03em; margin-right: auto; color: var(--text); text-decoration: none; transition: color 0.2s, text-shadow 0.2s; }
+.nav__brand:hover { color: #f2d3a0; text-shadow: 0 0 18px rgba(224, 160, 77, 0.45); }
 .nav__link { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
 .nav__link:hover { color: var(--text); }
 .nav__link--active { color: var(--accent); }
@@ -205,7 +264,8 @@ body::after {
 .missed-round:last-child { margin-bottom: 0; }
 .missed-round--current { box-shadow: inset 3px 0 0 var(--accent); }
 .missed-round__head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; }
-.missed-round__num { font-weight: 600; font-size: 0.85rem; }
+.missed-round__num { font-weight: 600; font-size: 0.85rem; color: var(--text); text-decoration: none; }
+.missed-round a.missed-round__num:hover { color: var(--accent); }
 .missed-round__badge { color: var(--accent); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .missed-round__count { margin-left: auto; color: var(--muted); font-size: 0.8rem; }
 .missed-round__films { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
@@ -222,7 +282,12 @@ body::after {
 .stat-mini--accent .stat-mini__num { color: var(--accent); }
 
 .film-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.film { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+/* The whole row opens the film: the title's link stretches over it, other links sit above. */
+.film { position: relative; display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; transition: background 0.15s, border-color 0.15s; }
+.film:hover { border-color: #3a3a42; background: #1d1d22; }
+.film:hover .film__title { color: var(--accent); }
+.film__title::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.film__sub a { position: relative; z-index: 1; }
 .film__main { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .film__stats { margin-left: auto; display: flex; align-items: flex-start; gap: 1.5rem; }
 .film__sub { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
@@ -263,7 +328,7 @@ body::after {
         radial-gradient(ellipse at 30% 40%, transparent 30%, rgba(0, 0, 0, 0.55) 100%),
         linear-gradient(180deg, transparent 40%, rgba(14, 14, 16, 0.7) 100%);
 }
-.poster--lg { width: 160px; height: auto; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.6); }
+.poster--lg { view-transition-name: poster; width: 160px; height: auto; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.6); }
 .film-detail__meta { display: flex; flex-direction: column; min-width: 0; }
 .film-detail__title { margin: 0 0 0.5rem; font-family: var(--serif); font-size: 3rem; font-weight: 600; line-height: 1.05; overflow-wrap: anywhere; }
 .film-detail__sub { margin: 0 0 1rem; color: var(--muted); }
@@ -276,7 +341,8 @@ body::after {
 .rating-list { list-style: none; margin: 0 0 2.5rem; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .rating { display: flex; align-items: center; gap: 1rem; }
 .rating__who { display: flex; flex-direction: column; min-width: 140px; }
-.rating__name { font-weight: 600; }
+.rating__name, .review__name { font-weight: 600; color: var(--text); text-decoration: none; }
+.rating__name:hover, .review__name:hover { color: var(--accent); }
 .rating__bar { flex: 1; height: 8px; background: var(--panel); border-radius: 4px; overflow: hidden; }
 .rating__fill { display: block; height: 100%; background: var(--accent); }
 .rating__score { min-width: 2rem; text-align: right; font-weight: 700; font-size: 1.1rem; }
@@ -284,7 +350,6 @@ body::after {
 .review-list { list-style: none; margin: 0 0 2.5rem; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .review { display: flex; gap: 1.25rem; padding: 0.9rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
 .review__who { flex-shrink: 0; width: 140px; display: flex; flex-direction: column; gap: 0.15rem; }
-.review__name { font-weight: 600; }
 .review__score { color: var(--accent); font-weight: 700; font-size: 1.1rem; }
 .review__body { flex: 1; min-width: 0; margin: 0; color: var(--text); line-height: 1.6; white-space: pre-line; }
 
@@ -310,6 +375,14 @@ body::after {
 .round__avg { color: var(--accent); font-weight: 600; font-size: 0.95rem; min-width: 4rem; text-align: right; }
 .round__films { list-style: none; margin: 0; padding: 0 0.75rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .round__films .film { background: var(--bg); }
+.round__films .film:hover { background: #141417; }
+
+.round-link { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; transition: color 0.15s, border-color 0.15s; }
+.round-link:hover { color: var(--accent); border-bottom-color: currentColor; }
+
+/* A round or member reached by link lights up once. */
+.spotlight { animation: spotlight 1.8s ease-out; }
+@keyframes spotlight { from { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224, 160, 77, 0.25); } }
 
 .film--winner { box-shadow: inset 3px 0 0 var(--accent); }
 .badge-winner { color: var(--accent); font-weight: 600; }
@@ -335,6 +408,22 @@ body::after {
 .hint::after { content: attr(data-tip); position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 240px; padding: 0.5rem 0.7rem; background: #000; color: var(--text); font-size: 0.8rem; line-height: 1.4; text-align: left; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 10; }
 .hint:hover::after { opacity: 1; }
 
+/* ── Laptops: the same row, made compact so the mascot's line keeps room beside him ── */
+@media (min-width: 960px) and (max-width: 1179px) {
+    .hero__tagline { max-width: 17rem; }
+    .hero .totals { display: grid; grid-template-columns: repeat(2, auto); row-gap: 1rem; }
+    .hero .stat:nth-child(odd) { padding-left: 0; border-left: none; }
+    .hero__mascot { height: 150px; }
+    .hero__line { font-size: 1.2rem; }
+}
+
+/* ── Tablets: too narrow for a row, so the hero stacks as on phones ── */
+@media (min-width: 641px) and (max-width: 959px) {
+    .hero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "speech" "cast"; justify-items: center; row-gap: 1.25rem; }
+    .hero__text { align-items: center; text-align: center; padding-bottom: 0; }
+    .hero__speech { justify-self: center; max-width: 440px; min-height: 2.6em; padding-bottom: 0; text-align: center; }
+}
+
 /* ── Mobile (phones & small tablets) ── */
 @media (max-width: 640px) {
     /* Less side padding so blocks don't crowd the screen edges. */
@@ -344,9 +433,11 @@ body::after {
     .nav { flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 0 -1rem 1.75rem; padding: 1rem 1.25rem; }
     .nav__brand { width: 100%; margin-right: 0; }
 
-    /* Hero: tagline + totals on top, mascot resting on the bottom edge. */
-    .hero { flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 1.5rem 0; }
-    .hero__text { align-items: stretch; text-align: center; padding-bottom: 0; }
+    /* Hero: tagline + totals on top, the mascot's line, then him resting on the bottom edge. */
+    .hero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "speech" "cast"; justify-items: center; row-gap: 1rem; padding: 1.5rem 1rem 0; }
+    .hero__text { align-items: stretch; width: 100%; text-align: center; padding-bottom: 0; }
+    .hero__speech { justify-self: center; padding: 0 0.5rem; text-align: center; min-height: 2.6em; font-size: 1.15rem; }
+    .hero__line { font-size: inherit; }
     .hero__mascot { height: 160px; }
     /* On mobile the grid spaces the stats; drop the desktop divider treatment. */
     .hero .totals { gap: 0.75rem; }

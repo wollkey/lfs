@@ -1,4 +1,4 @@
-import {letterboxdLink, plural, posterImg, esc, filmUrl} from '../helpers.js';
+import {letterboxdLink, plural, posterImg, esc, filmUrl, roundLink} from '../helpers.js';
 
 let sortMode = 'position';
 let films = null;
@@ -25,7 +25,7 @@ function filmRow(film) {
     const avg = film.average === null ? '—' : film.average;
 
     const parts = [];
-    if (film.round !== null)    parts.push(`Круг ${film.round}`);
+    if (film.round !== null)    parts.push(roundLink(film.round));
     if (film.pickedBy !== null) parts.push(`выбрал ${letterboxdLink(film.pickedBy)}`);
     const sub = parts.join(' · ');
 

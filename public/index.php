@@ -5,6 +5,7 @@ declare(strict_types=1);
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use App\Http\BadRequest;
+use App\Http\Controller\FactsController;
 use App\Http\Controller\FilmController;
 use App\Http\Controller\FilmsController;
 use App\Http\Controller\IngestController;
@@ -35,6 +36,7 @@ $controllers = [
     RoundController::class => new RoundController($stats),
     FilmController::class => new FilmController($stats),
     FilmsController::class => new FilmsController($stats),
+    FactsController::class => new FactsController($stats),
 ];
 
 if (!$isProd) {
