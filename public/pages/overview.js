@@ -70,6 +70,24 @@ function memberCard([one, many], members, value, meta) {
     </article>`;
 }
 
+function countUp(el, duration = 800) {
+    const target = Number(el.dataset.count);
+    const start = performance.now();
+
+    const tick = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - (1 - progress) ** 3;
+        el.textContent = String(Math.round(target * eased));
+        if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
+function stat(value, forms) {
+    const count = value === null ? '' : ` data-count="${value}"`;
+    return `<div class="stat"><span class="stat__num"${count}>${num(value)}</span><span class="stat__label">${plural(num(value), forms)}</span></div>`;
+}
+
 export async function render(root) {
     const response = await fetch('/api/overview');
     if (!response.ok) throw new Error(`API статус ${response.status}`);
@@ -84,29 +102,29 @@ export async function render(root) {
       <div class="hero__text">
         <p class="hero__tagline">Смотрим кино кругами и считаем, что из этого вышло</p>
         <section class="totals">
-          <div class="stat"><span class="stat__num">${t.films}</span><span class="stat__label">${plural(t.films, ['фильм','фильма','фильмов'])}</span></div>
-          <div class="stat"><span class="stat__num">${t.ratings}</span><span class="stat__label">${plural(t.ratings, ['оценка', 'оценки', 'оценок'])}</span></div>
-          <div class="stat"><span class="stat__num">${t.members}</span><span class="stat__label">${plural(t.members, ['участник','участника','участников'])}</span></div>
-          <div class="stat"><span class="stat__num">${num(t.currentRound)}</span><span class="stat__label">${plural(num(t.currentRound), ['круг','круга','кругов'])}</span></div>
+          ${stat(t.films, ['фильм', 'фильма', 'фильмов'])}
+          ${stat(t.ratings, ['оценка', 'оценки', 'оценок'])}
+          ${stat(t.members, ['участник', 'участника', 'участников'])}
+          ${stat(t.currentRound, ['круг', 'круга', 'кругов'])}
         </section>
       </div>
       <img class="hero__mascot" src="/mascot.png" alt="">
     </section>
 
-    <h2 class="section-title">Фильмы</h2>
-    <section class="cards">
+    <h2 class="section-title rise" style="--i: 1">Фильмы</h2>
+    <section class="cards rise" style="--i: 1">
       ${filmCard(['Лучший фильм', 'Лучшие фильмы'], data.bestFilm)}
       ${filmCard(['Худший фильм', 'Худшие фильмы'], data.worstFilm)}
     </section>
 
-    <h2 class="section-title">Консенсус</h2>
-    <section class="cards">
+    <h2 class="section-title rise" style="--i: 2">Консенсус</h2>
+    <section class="cards rise" style="--i: 2">
       ${filmCard(['Самый спорный', 'Самые спорные'], data.mostDivisive, 'расхождение')}
       ${filmCard(['Полное согласие', 'Полное согласие'], data.mostAgreed, 'расхождение')}
     </section>
 
-    <h2 class="section-title">Участники</h2>
-    <section class="cards">
+    <h2 class="section-title rise" style="--i: 3">Участники</h2>
+    <section class="cards rise" style="--i: 3">
       ${memberCard(
         ['Самый активный', 'Самые активные'],
         active,
@@ -120,4 +138,8 @@ export async function render(root) {
         (m) => `средняя по ${pluralWith(m.picks, ['зачётному выбору', 'зачётным выборам', 'зачётным выборам'])} <span class="hint" data-tip="Учитываются только фильмы участника, набравшие кворум (≥5 оценок). Показана средняя оценка клуба по ним.">?</span>`,
     )}
     </section>`;
+
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        root.querySelectorAll('.stat__num[data-count]').forEach((el) => countUp(el));
+    }
 }

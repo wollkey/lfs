@@ -79,6 +79,18 @@ body::after {
 }
 .hero__mascot { flex-shrink: 0; align-self: flex-end; display: block; height: 180px; width: auto; }
 
+/* Opening of the overview: the hero fades up from black, the mascot rises into frame,
+   then the card rows follow one by one. Plays on every visit, skipped for reduced motion. */
+@keyframes fade-from-black { from { opacity: 0; filter: brightness(0); } }
+@keyframes rise-into-frame { from { transform: translateY(100%); } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.hero { animation: fade-from-black 0.9s ease-out both; }
+.hero__mascot { animation: rise-into-frame 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
+.rise { animation: rise 0.6s ease-out calc(0.25s + var(--i) * 0.08s) both; }
+@media (prefers-reduced-motion: reduce) {
+    .hero, .hero__mascot, .rise { animation: none; }
+}
+
 /* Left column fills the block height: tagline at the top, totals at the bottom. */
 .hero__text {
     display: flex;
