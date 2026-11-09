@@ -101,7 +101,7 @@ migrate: init ## Apply pending migrations
 	@$(CONSOLE) migrate
 .PHONY: migrate
 
-seed: ## Update the DB from data/: new films, ratings, missing posters
+seed: migrate ## Apply pending migrations, then update the DB from data/: new films, ratings, missing posters
 	@$(CONSOLE) seed $(DIR)
 .PHONY: seed
 

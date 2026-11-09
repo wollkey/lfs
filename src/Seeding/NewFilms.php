@@ -57,6 +57,9 @@ final readonly class NewFilms
         $slug = $film->slug;
 
         $this->films->save(new Film($slug, $film->title));
+        if ($film->details !== null) {
+            $this->films->saveDetails($slug, $film->details);
+        }
 
         $slot = $this->rounds->slotOf($slug) ?? $this->nextSlot();
 

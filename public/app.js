@@ -3,6 +3,7 @@ import { render as films }      from './pages/films.js';
 import { render as filmDetail } from './pages/film.js';
 import { render as rounds }     from './pages/rounds.js';
 import { render as members }    from './pages/members.js';
+import { render as wrapped }    from './pages/wrapped.js';
 import { esc }                  from './helpers.js';
 
 const routes = [
@@ -11,6 +12,7 @@ const routes = [
     { path: '/films/{slug}', render: filmDetail },
     { path: '/rounds',       render: rounds },
     { path: '/members',      render: members },
+    { path: '/wrapped/{year}', render: wrapped },
 ];
 
 function matchRoute(pathname) {

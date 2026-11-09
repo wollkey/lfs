@@ -70,6 +70,40 @@ final class SeedCommandTest extends IntegrationTestCase
         self::assertFileExists($this->posterDir.'/drive-2011.jpg');
     }
 
+    public function testSavesTheDetailsOfANewFilm(): void
+    {
+        $this->givenMembers('wollkey');
+        $this->givenFriendsPage('drive-2011');
+
+        $this->console()->execute(['html-dir' => $this->htmlDir]);
+
+        self::assertSame([2011, 100, 3.91], $this->details('drive-2011'));
+        self::assertSame([
+            ['director', 'Nicolas Winding Refn'],
+            ['genre', 'Thriller'],
+            ['genre', 'Drama'],
+            ['genre', 'Crime'],
+            ['country', 'USA'],
+        ], $this->tags('drive-2011'));
+    }
+
+    public function testBackfillsTheDetailsOfAFilmAlreadyInTheClub(): void
+    {
+        $this->givenMembers('wollkey');
+        $this->givenRoundFilm(6, 'drive-2011', 1, 'wollkey');
+        $this->givenPoster('drive-2011');
+        $this->givenRoundFilm(6, 'city-lights', 2);
+        $this->givenPoster('city-lights');
+
+        $console = $this->console();
+        $console->execute(['html-dir' => $this->htmlDir]);
+
+        self::assertSame([2011, 100, 3.91], $this->details('drive-2011'));
+        self::assertSame([null, null, null], $this->details('city-lights'));
+        self::assertStringContainsString('Details: 1 films.', $console->getDisplay());
+        self::assertStringContainsString('No release year for city-lights.', $console->getDisplay());
+    }
+
     public function testStartsANewRoundOnceEveryActiveMemberHasPicked(): void
     {
         $this->givenMembers('wollkey', 'lenka_penka');
@@ -298,6 +332,33 @@ final class SeedCommandTest extends IntegrationTestCase
         $row = $stmt->fetch();
 
         return [(int) $row['round_number'], (int) $row['position'], $row['picked_by'], $row['picked_on']];
+    }
+
+    /**
+     * @return array{?int, ?int, ?float}
+     */
+    private function details(string $slug): array
+    {
+        $stmt = $this->pdo->prepare('SELECT release_year, runtime, letterboxd_rating FROM films WHERE slug = :slug');
+        $stmt->execute(['slug' => $slug]);
+        $row = $stmt->fetch();
+
+        return [
+            $row['release_year'] !== null ? (int) $row['release_year'] : null,
+            $row['runtime'] !== null ? (int) $row['runtime'] : null,
+            $row['letterboxd_rating'] !== null ? (float) $row['letterboxd_rating'] : null,
+        ];
+    }
+
+    /**
+     * @return list<array{string, string}>
+     */
+    private function tags(string $slug): array
+    {
+        $stmt = $this->pdo->prepare('SELECT kind, name FROM film_tags WHERE film_slug = :slug ORDER BY rowid');
+        $stmt->execute(['slug' => $slug]);
+
+        return array_map(static fn (array $r): array => [(string) $r['kind'], (string) $r['name']], $stmt->fetchAll());
     }
 
     private function dump(): string

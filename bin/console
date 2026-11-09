@@ -49,7 +49,7 @@ use App\Telegram\RsvgRasterizer;
 use Phptg\BotApi\TelegramBotApi;
 use Symfony\Component\Console\Application;
 
-$pdo = Connection::open(__DIR__ . '/../data/lfs.sqlite');
+$pdo = Connection::open(getenv('LFS_DATABASE') ?: __DIR__ . '/../data/lfs.sqlite');
 
 $migrator = new Migrator($pdo, __DIR__ . '/../migrations');
 $members = new MemberRepository($pdo);

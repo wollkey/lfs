@@ -555,17 +555,20 @@ final readonly class Statistics
      * each scored it above their own average, or each below. Generous and strict raters
      * still agree when they liked the same film.
      *
+     * Only films picked in $year count when one is given.
+     *
      * @return array<string, TasteMatch[]>
      */
-    public function tasteMatches(): array
+    public function tasteMatches(?int $year = null): array
     {
-        $rows = $this->pdo->query(<<<SQL
+        $inYear = $year === null ? '' : 'AND r.film_slug IN (SELECT film_slug FROM round_films WHERE substr(picked_on, 1, 4) = :year)';
+        $rows = $this->fetchAll(<<<SQL
                 SELECT m.username, m.display_name, r.film_slug, r.score
                 FROM members m
                 JOIN ratings r ON r.member_username = m.username
-                WHERE m.status = 'active'
+                WHERE m.status = 'active' {$inYear}
                 ORDER BY m.position NULLS LAST, m.display_name
-            SQL)->fetchAll();
+            SQL, $year === null ? [] : ['year' => (string) $year]);
 
         $names = [];
         $scores = [];

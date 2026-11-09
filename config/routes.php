@@ -10,6 +10,7 @@ use App\Http\Controller\MemberController;
 use App\Http\Controller\OverviewController;
 use App\Http\Controller\RoundController;
 use App\Http\Controller\TelegramWebhookController;
+use App\Http\Controller\WrappedController;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -21,6 +22,7 @@ $routes->add('film', new Route('/api/films/{slug}', ['_controller' => FilmContro
 $routes->add('members', new Route('/api/members', ['_controller' => MemberController::class]));
 $routes->add('rounds', new Route('/api/rounds', ['_controller' => RoundController::class]));
 $routes->add('facts', new Route('/api/facts', ['_controller' => FactsController::class]));
+$routes->add('wrapped', new Route('/api/wrapped/{year}', ['_controller' => WrappedController::class], ['year' => '\d{4}']));
 
 if ((getenv('APP_ENV') ?: 'dev') !== 'prod') {
     $routes->add('ingest', new Route('/api/ingest', ['_controller' => IngestController::class]));

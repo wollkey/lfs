@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Parser;
 
+use App\Domain\FilmDetails;
 use App\Letterboxd\Dto\ParsedFilm;
 use App\Letterboxd\Exception\NotFoundException;
 use App\Letterboxd\Parser\FilmPageParser;
@@ -35,6 +36,16 @@ final class FilmPageParserTest extends TestCase
         );
     }
 
+    public function testReadsTheFilmDetailsFromJsonLd(): void
+    {
+        $film = $this->parser->parse($this->html);
+
+        self::assertEquals(
+            new FilmDetails(2011, 100, 3.91, ['Nicolas Winding Refn'], ['Thriller', 'Drama', 'Crime'], ['USA']),
+            $film->details,
+        );
+    }
+
     public function testFallsBackToMetaTagsWithoutJsonLd(): void
     {
         $film = $this->parser->parse(<<<'HTML'
@@ -48,6 +59,7 @@ final class FilmPageParserTest extends TestCase
         self::assertSame('stalker', $film->slug);
         self::assertSame('Stalker', $film->title);
         self::assertStringContainsString('51062-stalker', (string) $film->posterUrl);
+        self::assertEquals(new FilmDetails(1979, null, null), $film->details);
     }
 
     public function testMalformedJsonLdFallsBackInsteadOfThrowing(): void

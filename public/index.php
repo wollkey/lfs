@@ -13,9 +13,11 @@ use App\Http\Controller\MemberController;
 use App\Http\Controller\OverviewController;
 use App\Http\Controller\RoundController;
 use App\Http\Controller\TelegramWebhookController;
+use App\Http\Controller\WrappedController;
 use App\Http\NotFound;
 use App\Persistence\Connection;
 use App\Statistics\Statistics;
+use App\Statistics\Wrapped\Wrapped;
 use App\Telegram\Inbox\Capture;
 use App\Telegram\Inbox\MessageLog;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
@@ -24,7 +26,7 @@ use Symfony\Component\Routing\RequestContext;
 
 $isProd = (getenv('APP_ENV') ?: 'dev') === 'prod';
 
-$databasePath = dirname(__DIR__).'/data/lfs.sqlite';
+$databasePath = getenv('LFS_DATABASE') ?: dirname(__DIR__).'/data/lfs.sqlite';
 $pdo = $isProd
     ? Connection::openReadOnly($databasePath)
     : Connection::open($databasePath);
@@ -37,6 +39,7 @@ $controllers = [
     FilmController::class => new FilmController($stats),
     FilmsController::class => new FilmsController($stats),
     FactsController::class => new FactsController($stats),
+    WrappedController::class => new WrappedController(new Wrapped($pdo, $stats)),
 ];
 
 if (!$isProd) {

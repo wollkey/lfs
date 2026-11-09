@@ -46,6 +46,7 @@ final class SeedCommand extends Command
 
         $this->seedTitles($htmlDir);
         $this->seedFilms($io, $htmlDir);
+        $this->seedDetails($io);
         $this->seedRatings($io, $htmlDir);
         $this->seedPosters($io);
 
@@ -90,6 +91,26 @@ final class SeedCommand extends Command
                 $added['position'],
                 $added['picker'] ?? 'nobody yet (run make pick)',
             ));
+        }
+    }
+
+    private function seedDetails(SymfonyStyle $io): void
+    {
+        $fetched = 0;
+
+        foreach ($this->films->slugsWithoutDetails() as $slug) {
+            $details = $this->filmPage->fetch($slug)?->details;
+            if ($details?->releaseYear === null) {
+                $io->warning("No release year for {$slug}.");
+                continue;
+            }
+
+            $this->films->saveDetails($slug, $details);
+            ++$fetched;
+        }
+
+        if ($fetched > 0) {
+            $io->text(sprintf('Details: %d films.', $fetched));
         }
     }
 
