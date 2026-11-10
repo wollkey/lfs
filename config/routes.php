@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controller\CeremonyController;
 use App\Http\Controller\FactsController;
 use App\Http\Controller\FilmController;
 use App\Http\Controller\FilmsController;
@@ -22,6 +23,7 @@ $routes->add('film', new Route('/api/films/{slug}', ['_controller' => FilmContro
 $routes->add('members', new Route('/api/members', ['_controller' => MemberController::class]));
 $routes->add('rounds', new Route('/api/rounds', ['_controller' => RoundController::class]));
 $routes->add('facts', new Route('/api/facts', ['_controller' => FactsController::class]));
+$routes->add('ceremony', new Route('/api/ceremony/{year}', ['_controller' => CeremonyController::class], ['year' => '\d{4}']));
 $routes->add('wrapped', new Route('/api/wrapped/{year}', ['_controller' => WrappedController::class], ['year' => '\d{4}']));
 
 if ((getenv('APP_ENV') ?: 'dev') !== 'prod') {

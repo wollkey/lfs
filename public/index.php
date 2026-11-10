@@ -5,6 +5,7 @@ declare(strict_types=1);
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use App\Http\BadRequest;
+use App\Http\Controller\CeremonyController;
 use App\Http\Controller\FactsController;
 use App\Http\Controller\FilmController;
 use App\Http\Controller\FilmsController;
@@ -16,6 +17,7 @@ use App\Http\Controller\TelegramWebhookController;
 use App\Http\Controller\WrappedController;
 use App\Http\NotFound;
 use App\Persistence\Connection;
+use App\Statistics\Ceremony\Ceremony;
 use App\Statistics\Statistics;
 use App\Statistics\Wrapped\Wrapped;
 use App\Telegram\Inbox\Capture;
@@ -40,6 +42,7 @@ $controllers = [
     FilmsController::class => new FilmsController($stats),
     FactsController::class => new FactsController($stats),
     WrappedController::class => new WrappedController(new Wrapped($pdo, $stats)),
+    CeremonyController::class => new CeremonyController(new Ceremony($pdo, $stats, dirname(__DIR__).'/data/ceremony')),
 ];
 
 if (!$isProd) {

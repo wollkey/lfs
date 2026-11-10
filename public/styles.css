@@ -476,6 +476,34 @@ body::after {
     .story__slide > * { animation: none; }
 }
 
+/* ── Ceremony: one nomination at a time on the big screen, the winner revealed last ── */
+.ceremony { display: none; }
+.ceremony--on { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; justify-content: center; gap: 4vh; padding: 6vh 6vw; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(224, 160, 77, 0.16), transparent 70%), var(--bg); cursor: pointer; user-select: none; outline: none; }
+.ceremony:fullscreen { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(224, 160, 77, 0.16), transparent 70%), var(--bg); }
+.ceremony__center, .ceremony__top { text-align: center; animation: rise 0.6s ease-out both; }
+.ceremony__eyebrow { margin: 0 0 1.5vh; color: var(--accent); font-size: clamp(0.9rem, 1.6vw, 1.6rem); font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; }
+.ceremony__title { margin: 0; font-family: var(--serif); font-size: clamp(2.5rem, 7vw, 7rem); font-weight: 600; line-height: 1.05; }
+.ceremony__top .ceremony__title { font-size: clamp(2rem, 4.5vw, 4.5rem); }
+.ceremony__lead { margin: 1.5vh 0 0; color: var(--muted); font-size: clamp(1rem, 1.8vw, 1.8rem); }
+.ceremony__nominees { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; gap: 3vw; }
+.ceremony__nominee { display: flex; flex-direction: column; align-items: center; gap: 1vh; width: min(22vw, 32vh); text-align: center; animation: rise 0.6s ease-out both; transition: opacity 0.6s, transform 0.6s; }
+.ceremony__nominee:nth-child(2) { animation-delay: 0.15s; }
+.ceremony__nominee:nth-child(3) { animation-delay: 0.3s; }
+.ceremony__nominee:nth-child(n + 4) { animation-delay: 0.45s; }
+.ceremony__poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; background: var(--border); box-shadow: 0 24px 50px -16px rgba(0, 0, 0, 0.9); transition: box-shadow 0.6s; }
+.ceremony__avatar { display: flex; align-items: center; justify-content: center; width: 70%; aspect-ratio: 1; border-radius: 50%; background: var(--panel); border: 2px solid var(--border); font-family: var(--serif); font-size: clamp(3rem, 8vw, 8rem); transition: border-color 0.6s, box-shadow 0.6s; }
+.ceremony__name { font-size: clamp(1.1rem, 2vw, 2.2rem); font-weight: 700; }
+.ceremony__detail { color: var(--muted); font-size: clamp(0.9rem, 1.4vw, 1.5rem); }
+.ceremony__value { color: var(--accent); font-size: clamp(1rem, 1.7vw, 1.9rem); font-weight: 700; animation: rise 0.5s ease-out 0.3s both; }
+.ceremony__badge { padding: 0.3em 1em; border-radius: 999px; background: linear-gradient(135deg, #f2d3a0 0%, var(--accent) 100%); color: #1a1206; font-size: clamp(0.8rem, 1.2vw, 1.3rem); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; animation: rise 0.5s ease-out 0.45s both; }
+.ceremony__nominees--revealed .ceremony__nominee:not(.ceremony__nominee--winner) { opacity: 0.35; transform: scale(0.94); }
+.ceremony__nominee--winner { transform: scale(1.06); }
+.ceremony__nominee--winner .ceremony__poster { box-shadow: 0 0 0 3px var(--accent), 0 0 60px 6px rgba(224, 160, 77, 0.45); }
+.ceremony__nominee--winner .ceremony__avatar { border-color: var(--accent); box-shadow: 0 0 60px 6px rgba(224, 160, 77, 0.45); }
+@media (prefers-reduced-motion: reduce) {
+    .ceremony__center, .ceremony__top, .ceremony__nominee, .ceremony__value, .ceremony__badge { animation: none; transition: none; }
+}
+
 /* ── Laptops: the same row, made compact so the mascot's line keeps room beside him ── */
 @media (min-width: 960px) and (max-width: 1179px) {
     .hero__tagline { max-width: 17rem; }
